@@ -548,6 +548,23 @@ export default function CalendarPage() {
   const [preselectedDate, setPreselectedDate] = useState<number | null>(null)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
 
+  useEffect(() => {
+    fetch('/api/db?collection=calendar_events', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setEvents(data) })
+      .catch(() => {})
+  }, [])
+
+  const saveEvents = async (updated: CalendarEvent[]) => {
+    try {
+      await fetch('/api/db?collection=calendar_events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      })
+    } catch {}
+  }
+
   const dayLabels = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
   const calendarCells = getCalendarDays(currentMonth, currentYear)
   const isToday = (day: number, inMonth: boolean) =>
@@ -564,12 +581,16 @@ export default function CalendarPage() {
   const goToday = () => { setCurrentMonth(today.getMonth()); setCurrentYear(today.getFullYear()) }
 
   const handleSaveEvent = useCallback((event: CalendarEvent) => {
-    setEvents(prev => [...prev, event])
-  }, [])
+    const updated = [...events, event]
+    setEvents(updated)
+    saveEvents(updated)
+  }, [events])
 
   const handleDeleteEvent = useCallback((id: string) => {
-    setEvents(prev => prev.filter(e => e.id !== id))
-  }, [])
+    const updated = events.filter(e => e.id !== id)
+    setEvents(updated)
+    saveEvents(updated)
+  }, [events])
 
   const handleDayClick = (day: number, inMonth: boolean) => {
     if (!inMonth) return

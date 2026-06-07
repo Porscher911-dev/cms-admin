@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { Plus, MoreHorizontal, MessageCircle, Phone, Calendar as CalendarIcon, X, ChevronRight, Trash2, AlertCircle } from "lucide-react"
@@ -104,12 +104,31 @@ export default function SalesPipelinePage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
+  useEffect(() => {
+    fetch('/api/db?collection=sales_leads', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setLeads(data) })
+      .catch(() => {})
+  }, [])
+
+  const saveLeads = async (updated: any[]) => {
+    try {
+      await fetch('/api/db?collection=sales_leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      })
+    } catch {}
+  }
+
   const handleAddLead = (lead: any) => {
-    setLeads(prev => [lead, ...prev])
+    const updated = [lead, ...leads]
+    setLeads(updated)
+    saveLeads(updated)
   }
 
   const handleMoveNext = (leadId: string) => {
-    setLeads(prev => prev.map(l => {
+    const updated = leads.map(l => {
       if (l.id === leadId) {
         const currentIdx = pipelineStages.findIndex(s => s.id === l.stage)
         if (currentIdx < pipelineStages.length - 1) {
@@ -120,11 +139,13 @@ export default function SalesPipelinePage() {
         }
       }
       return l
-    }))
+    })
+    setLeads(updated)
+    saveLeads(updated)
   }
 
   const handleMovePrev = (leadId: string) => {
-    setLeads(prev => prev.map(l => {
+    const updated = leads.map(l => {
       if (l.id === leadId) {
         const currentIdx = pipelineStages.findIndex(s => s.id === l.stage)
         if (currentIdx > 0) {
@@ -133,7 +154,9 @@ export default function SalesPipelinePage() {
         }
       }
       return l
-    }))
+    })
+    setLeads(updated)
+    saveLeads(updated)
   }
 
   return (
@@ -214,7 +237,7 @@ export default function SalesPipelinePage() {
       {showAddModal && <AddLeadModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSave={handleAddLead} />}
       {deleteId && (
         <ConfirmModal isOpen={!!deleteId} title="Xóa Lead" message="Bạn có chắc chắn muốn xóa Lead này?"
-          onConfirm={() => { setLeads(prev => prev.filter(l => l.id !== deleteId)); toast.success("Đã xóa Lead!"); setDeleteId(null) }}
+          onConfirm={() => { const updated = leads.filter(l => l.id !== deleteId); setLeads(updated); saveLeads(updated); toast.success("Đã xóa Lead!"); setDeleteId(null) }}
           onCancel={() => setDeleteId(null)}
         />
       )}

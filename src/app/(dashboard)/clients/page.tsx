@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { 
@@ -151,6 +151,23 @@ export default function ClientsPage() {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
+  useEffect(() => {
+    fetch('/api/db?collection=clients', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setClients(data) })
+      .catch(() => {})
+  }, [])
+
+  const saveClients = async (updated: any[]) => {
+    try {
+      await fetch('/api/db?collection=clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      })
+    } catch {}
+  }
+
   const statuses = [
     { id: "ALL", label: "Tất cả" },
     { id: "ACTIVE", label: "Hoạt động" },
@@ -166,15 +183,18 @@ export default function ClientsPage() {
   })
 
   const handleSaveClient = (saved: any) => {
+    let updated: any[]
     if (clientToEdit) {
-      setClients(prev => prev.map(c => c.id === saved.id ? saved : c))
+      updated = clients.map(c => c.id === saved.id ? saved : c)
       toast.success("Đã cập nhật khách hàng thành công!")
     } else {
-      setClients(prev => [saved, ...prev])
+      updated = [saved, ...clients]
       toast.success("Đã thêm khách hàng mới thành công!")
     }
+    setClients(updated)
     setShowModal(false)
     setClientToEdit(null)
+    saveClients(updated)
   }
 
   return (
@@ -291,7 +311,7 @@ export default function ClientsPage() {
 
       {deleteId && (
         <ConfirmModal isOpen={!!deleteId} title="Xóa khách hàng" message="Bạn có chắc chắn muốn xóa khách hàng này? Hành động không thể hoàn tác."
-          onConfirm={() => { setClients(prev => prev.filter(c => c.id !== deleteId)); toast.success("Đã xóa khách hàng!"); setDeleteId(null) }}
+          onConfirm={() => { const updated = clients.filter(c => c.id !== deleteId); setClients(updated); saveClients(updated); toast.success("Đã xóa khách hàng!"); setDeleteId(null) }}
           onCancel={() => setDeleteId(null)}
         />
       )}

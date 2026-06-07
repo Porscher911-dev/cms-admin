@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { 
@@ -215,8 +215,27 @@ export default function FinancePage() {
   const [filterTime, setFilterTime] = useState("ALL")
   const [selectedTxn, setSelectedTxn] = useState<any>(null)
 
+  useEffect(() => {
+    fetch('/api/db?collection=finance', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (Array.isArray(data) && data.length > 0) setTransactions(data) })
+      .catch(() => {})
+  }, [])
+
+  const saveTransactions = async (updated: any[]) => {
+    try {
+      await fetch('/api/db?collection=finance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      })
+    } catch {}
+  }
+
   const handleAddTransaction = (txn: any) => {
-    setTransactions(prev => [txn, ...prev])
+    const updated = [txn, ...transactions]
+    setTransactions(updated)
+    saveTransactions(updated)
   }
 
   const parseDate = (dateStr: string) => {
@@ -448,7 +467,7 @@ export default function FinancePage() {
       {selectedTxn && <TransactionDetailModal txn={selectedTxn} onClose={() => setSelectedTxn(null)} />}
       {deleteId && (
         <ConfirmModal isOpen={!!deleteId} title="Xóa giao dịch" message="Bạn có chắc chắn muốn xóa giao dịch này?"
-          onConfirm={() => { setTransactions(prev => prev.filter(i => i.id !== deleteId)); toast.success("Đã xóa giao dịch!"); setDeleteId(null); setSelectedTxn(null); }}
+          onConfirm={() => { const updated = transactions.filter(i => i.id !== deleteId); setTransactions(updated); saveTransactions(updated); toast.success("Đã xóa giao dịch!"); setDeleteId(null); setSelectedTxn(null); }}
           onCancel={() => setDeleteId(null)}
         />
       )}
