@@ -63,7 +63,16 @@ export default function LoginPage() {
             router.refresh()
           }, 500)
         } else {
-          toast.error('Email hoặc mật khẩu không chính xác!')
+          if (!stored) {
+            toast.error('Lỗi: Trình duyệt của bạn chưa lưu danh sách nhân sự nào (Hãy đăng nhập admin và tạo lại).')
+          } else if (!foundEmployee) {
+            const allEmails = JSON.parse(stored).map((e: any) => e.email).join(', ')
+            toast.error(`Không tìm thấy tài khoản: ${loginEmail}. (Các email đang có: ${allEmails})`)
+          } else if (loginPassword !== 'Mrex@2026') {
+            toast.error(`Sai mật khẩu! Bạn đã nhập: ${loginPassword}`)
+          } else {
+            toast.error('Email hoặc mật khẩu không chính xác!')
+          }
           setIsLoading(false)
         }
       }
