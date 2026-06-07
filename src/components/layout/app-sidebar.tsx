@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslation } from "@/contexts/TranslationContext"
@@ -47,6 +48,21 @@ export function AppSidebar() {
   const { t } = useTranslation()
   const { role } = useRole()
   const { isOpen, close } = useSidebar()
+  const [logoUrl, setLogoUrl] = useState("")
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const l = localStorage.getItem("mrex_brand_logo")
+      setLogoUrl(l || "")
+    }
+    handleStorage()
+    window.addEventListener("storage", handleStorage)
+    window.addEventListener("themeSettingsUpdated", handleStorage)
+    return () => {
+      window.removeEventListener("storage", handleStorage)
+      window.removeEventListener("themeSettingsUpdated", handleStorage)
+    }
+  }, [])
 
   const filteredRoutes = routes.filter(route => {
     if (role === "DIRECTOR") {
@@ -86,10 +102,16 @@ export function AppSidebar() {
       )}>
         <div className="h-16 flex items-center px-6 border-b justify-between md:justify-start">
           <div className="font-bold text-xl text-primary flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-              M
-            </div>
-            Mrex <span className="text-foreground">Agency</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="max-h-8 max-w-[120px] object-contain" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+                  M
+                </div>
+                Mrex <span className="text-foreground">Agency</span>
+              </>
+            )}
           </div>
         </div>
       

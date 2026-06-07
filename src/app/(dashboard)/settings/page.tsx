@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { User, Lock, Bell, Globe, Save } from "lucide-react"
 import { useTheme } from "next-themes"
+import { hexToHSL } from "@/lib/utils"
 
 type SettingsTab = "profile" | "security" | "notifications" | "appearance"
 
@@ -23,12 +24,38 @@ export default function SettingsPage() {
   const [taskNotif, setTaskNotif] = useState(true)
   const [reportNotif, setReportNotif] = useState(false)
   
+  // Brand states
+  const [brandColor, setBrandColor] = useState("#2563eb")
+  const [brandLogo, setBrandLogo] = useState("")
+  
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    const storedColor = localStorage.getItem("mrex_brand_color_hex")
+    if (storedColor) setBrandColor(storedColor)
+    const storedLogo = localStorage.getItem("mrex_brand_logo")
+    if (storedLogo) setBrandLogo(storedLogo)
   }, [])
+
+  const handleSaveAppearance = () => {
+    try {
+      const hslColor = hexToHSL(brandColor)
+      localStorage.setItem("mrex_brand_color", hslColor)
+      localStorage.setItem("mrex_brand_color_hex", brandColor)
+      if (brandLogo) {
+        localStorage.setItem("mrex_brand_logo", brandLogo)
+      } else {
+        localStorage.removeItem("mrex_brand_logo")
+      }
+      // Dispatch custom event to update other components immediately
+      window.dispatchEvent(new Event("themeSettingsUpdated"))
+      toast.success("Đã cập nhật giao diện và logo!")
+    } catch (e) {
+      toast.error("Màu sắc không hợp lệ!")
+    }
+  }
 
   const handleSaveProfile = () => {
     toast.success("Đã lưu thông tin cá nhân thành công!")
@@ -329,6 +356,50 @@ export default function SettingsPage() {
                     <option value="en">English (EN)</option>
                   </select>
                 </div>
+
+                <div className="p-4 border rounded-xl space-y-4">
+                  <h4 className="font-semibold text-sm">Thương hiệu Công ty</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1">Màu sắc chủ đạo (Hex)</label>
+                      <div className="flex gap-3 items-center">
+                        <input 
+                          type="color" 
+                          value={brandColor}
+                          onChange={(e) => setBrandColor(e.target.value)}
+                          className="w-10 h-10 rounded cursor-pointer border-0 p-0"
+                        />
+                        <input 
+                          type="text" 
+                          value={brandColor}
+                          onChange={(e) => setBrandColor(e.target.value)}
+                          placeholder="#000000"
+                          className="bg-muted border rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 flex-1 max-w-[120px]"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1">URL Logo Công ty</label>
+                      <input 
+                        type="text" 
+                        value={brandLogo}
+                        onChange={(e) => setBrandLogo(e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                        className="w-full bg-muted border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">Để trống nếu muốn sử dụng logo mặc định của hệ thống.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button 
+                  onClick={handleSaveAppearance}
+                  className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                >
+                  <Save className="w-4 h-4" /> Lưu cấu hình
+                </button>
               </div>
             </div>
           )}
