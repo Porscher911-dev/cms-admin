@@ -235,8 +235,8 @@ export default function ClientsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+        <div className="overflow-x-auto w-full custom-scrollbar">
+          <table className="w-full min-w-[700px] text-sm text-left">
             <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
               <tr>
                 <th className="px-6 py-4 font-semibold">Khách hàng / Công ty</th>

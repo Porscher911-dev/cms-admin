@@ -93,7 +93,7 @@ export function AppSidebar() {
       )}
       
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 border-r bg-card flex flex-col transform transition-transform duration-300 md:relative md:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 w-64 border-r bg-card flex flex-col transform transition-transform duration-300 md:relative md:translate-x-0 md:shrink-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="h-16 flex items-center px-6 border-b justify-between md:justify-start">

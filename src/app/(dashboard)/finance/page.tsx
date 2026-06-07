@@ -408,33 +408,35 @@ export default function FinancePage() {
             {filteredTransactions.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">Không có giao dịch nào phù hợp với bộ lọc.</div>
             ) : filteredTransactions.map((txn) => (
-              <div key={txn.id} onClick={() => setSelectedTxn(txn)} className="p-4 rounded-xl border bg-card hover:border-primary/30 transition-colors flex items-start justify-between group cursor-pointer">
-                <div className="flex items-start gap-3 flex-1 min-w-0 pr-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+              <div key={txn.id} onClick={() => setSelectedTxn(txn)} className="p-3 sm:p-4 rounded-xl border bg-card hover:border-primary/30 transition-colors flex items-start justify-between group cursor-pointer gap-2">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
                     txn.type === 'THU' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/30'
                   }`}>
-                    {txn.type === 'THU' ? <ArrowUpCircle className="w-5 h-5" /> : <ArrowDownCircle className="w-5 h-5" />}
+                    {txn.type === 'THU' ? <ArrowUpCircle className="w-4 h-4 sm:w-5 sm:h-5" /> : <ArrowDownCircle className="w-4 h-4 sm:w-5 sm:h-5" />}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h4 className="font-semibold text-sm truncate" title={txn.title}>{txn.title}</h4>
-                    <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground mt-0.5">
                       <span>{txn.id} • {txn.date}</span>
-                      <span className={`px-1.5 py-[1px] rounded text-[9px] font-bold border ${txn.source === 'COMPANY_ACC' ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-400'}`}>
-                        {txn.source === 'COMPANY_ACC' ? 'CÔNG TY' : 'CÁ NHÂN'}
-                      </span>
-                      <span className={`px-1.5 py-[1px] rounded text-[9px] font-bold border ${
-                        txn.category === 'MREX' ? 'border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-300' : 
-                        txn.category === 'YEN' ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
-                        txn.category === 'GANG_TAY' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                        txn.category === 'HOA_SAP' ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-400' :
-                        txn.category === 'LIVESTREAM' ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400' :
-                        'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                      }`}>
-                        {txn.category === 'MREX' ? 'MREX' : txn.category === 'YEN' ? 'YẾN SÀO' : txn.category === 'GANG_TAY' ? 'GĂNG TAY' : txn.category === 'HOA_SAP' ? 'HOA SÁP' : txn.category === 'LIVESTREAM' ? 'LIVE STREAM' : 'KHÁC'}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1 mt-1">
+                        <span className={`px-1.5 py-[1px] rounded text-[9px] font-bold border whitespace-nowrap ${txn.source === 'COMPANY_ACC' ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-400'}`}>
+                          {txn.source === 'COMPANY_ACC' ? 'CÔNG TY' : 'CÁ NHÂN'}
+                        </span>
+                        <span className={`px-1.5 py-[1px] rounded text-[9px] font-bold border whitespace-nowrap ${
+                          txn.category === 'MREX' ? 'border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-300' : 
+                          txn.category === 'YEN' ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                          txn.category === 'GANG_TAY' ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                          txn.category === 'HOA_SAP' ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-400' :
+                          txn.category === 'LIVESTREAM' ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400' :
+                          'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                        }`}>
+                          {txn.category === 'MREX' ? 'MREX' : txn.category === 'YEN' ? 'YẾN SÀO' : txn.category === 'GANG_TAY' ? 'GĂNG TAY' : txn.category === 'HOA_SAP' ? 'HOA SÁP' : txn.category === 'LIVESTREAM' ? 'LIVE STREAM' : 'KHÁC'}
+                        </span>
+                      </div>
                     </div>
                     {txn.note && (
-                      <div className="text-xs text-muted-foreground mt-1.5 bg-muted/50 p-2 rounded-md italic border-l-2 border-primary/50 truncate max-w-[200px] sm:max-w-[300px]">
+                      <div className="text-xs text-muted-foreground mt-1.5 bg-muted/50 p-2 rounded-md italic border-l-2 border-primary/50 line-clamp-1">
                         "{txn.note}"
                       </div>
                     )}
