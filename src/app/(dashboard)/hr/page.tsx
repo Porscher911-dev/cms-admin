@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { 
@@ -9,11 +9,7 @@ import {
 } from "lucide-react"
 
 const initialEmployees = [
-  { id: "E01", name: "Nguyễn Văn A", role: "SEO Specialist", systemRole: "EMPLOYEE", department: "SEO", email: "vana@mrex.agency", phone: "0901234567", cccd: "079012345678", address: "123 Lê Lợi, Q1, TP.HCM", status: "ACTIVE", attendance: "100%", tasksCompleted: 45, tasksDelayed: 0 },
-  { id: "E02", name: "Trần Thị B", role: "Content Manager", systemRole: "MANAGER", department: "Content", email: "thib@mrex.agency", phone: "0901234568", cccd: "079087654321", address: "456 Nguyễn Huệ, Q1, TP.HCM", status: "ON_LEAVE", attendance: "85%", tasksCompleted: 15, tasksDelayed: 3 },
-  { id: "E03", name: "Lê Hoàng C", role: "UI/UX Designer", systemRole: "EMPLOYEE", department: "Design", email: "hoangc@mrex.agency", phone: "0901234569", cccd: "079112233445", address: "789 Trần Hưng Đạo, Q5, TP.HCM", status: "ACTIVE", attendance: "98%", tasksCompleted: 32, tasksDelayed: 1 },
-  { id: "E04", name: "Phạm D", role: "Ads Optimizer", systemRole: "EMPLOYEE", department: "Google Ads", email: "phamd@mrex.agency", phone: "0901234570", cccd: "079223344556", address: "321 Võ Văn Kiệt, Q1, TP.HCM", status: "ACTIVE", attendance: "100%", tasksCompleted: 50, tasksDelayed: 0 },
-  { id: "E05", name: "Hoàng E", role: "Creative Director", systemRole: "DIRECTOR", department: "Video", email: "hoange@mrex.agency", phone: "0901234571", cccd: "079334455667", address: "654 Phạm Văn Đồng, Thủ Đức", status: "ACTIVE", attendance: "92%", tasksCompleted: 28, tasksDelayed: 6 },
+  { id: "E00", name: "Quản trị viên", role: "Administrator", systemRole: "DIRECTOR", department: "BOD", email: "admin@mrex.vn", phone: "0362777763", cccd: "", address: "", status: "ACTIVE", attendance: "100%", tasksCompleted: 0, tasksDelayed: 0 }
 ]
 
 const evaluatePerformance = (completed: number, delayed: number) => {
@@ -148,12 +144,22 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen:
 }
 
 export default function HRPage() {
-  const [employees, setEmployees] = useState(initialEmployees)
+  const [employees, setEmployees] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [empToEdit, setEmpToEdit] = useState<any | null>(null)
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem("mrex_employees")
+    if (stored) {
+      setEmployees(JSON.parse(stored))
+    } else {
+      setEmployees(initialEmployees)
+      localStorage.setItem("mrex_employees", JSON.stringify(initialEmployees))
+    }
+  }, [])
 
   const filteredEmployees = employees.filter(e =>
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -165,13 +171,16 @@ export default function HRPage() {
   const leaveCount = employees.filter(e => e.status === "ON_LEAVE").length
 
   const handleSaveEmployee = (saved: any) => {
+    let newEmployees;
     if (empToEdit) {
-      setEmployees(prev => prev.map(e => e.id === saved.id ? saved : e))
+      newEmployees = employees.map(e => e.id === saved.id ? saved : e)
       toast.success("Đã cập nhật thông tin nhân viên!")
     } else {
-      setEmployees(prev => [saved, ...prev])
+      newEmployees = [saved, ...employees]
       toast.success("Đã thêm nhân viên mới!")
     }
+    setEmployees(newEmployees)
+    localStorage.setItem("mrex_employees", JSON.stringify(newEmployees))
     setShowModal(false)
     setEmpToEdit(null)
   }
@@ -318,7 +327,13 @@ export default function HRPage() {
       {showModal && <EmployeeModal isOpen={showModal} onClose={() => { setShowModal(false); setEmpToEdit(null) }} onSave={handleSaveEmployee} empToEdit={empToEdit} />}
       {deleteId && (
         <ConfirmModal isOpen={!!deleteId} title="Xóa nhân viên" message="Bạn có chắc chắn muốn xóa nhân viên này? Hành động không thể hoàn tác."
-          onConfirm={() => { setEmployees(prev => prev.filter(e => e.id !== deleteId)); toast.success("Đã xóa nhân viên!"); setDeleteId(null) }}
+          onConfirm={() => { 
+            const newEmployees = employees.filter(e => e.id !== deleteId);
+            setEmployees(newEmployees);
+            localStorage.setItem("mrex_employees", JSON.stringify(newEmployees));
+            toast.success("Đã xóa nhân viên!"); 
+            setDeleteId(null);
+          }}
           onCancel={() => setDeleteId(null)}
         />
       )}

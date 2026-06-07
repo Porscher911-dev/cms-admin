@@ -47,12 +47,12 @@ export function AppSidebar() {
   const { t } = useTranslation()
   const { role } = useRole()
   const { isOpen, close } = useSidebar()
-  const [logoUrl, setLogoUrl] = useState("")
+  const [logoUrl, setLogoUrl] = useState("/logo.png")
 
   useEffect(() => {
     const handleStorage = () => {
       const l = localStorage.getItem("mrex_brand_logo")
-      setLogoUrl(l || "")
+      setLogoUrl(l || "/logo.png")
     }
     handleStorage()
     window.addEventListener("storage", handleStorage)

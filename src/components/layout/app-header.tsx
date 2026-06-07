@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Bell, Search, Menu, Globe, Shield, X, LogOut, User } from "lucide-react"
+import { Bell, Search, Menu, Globe, X, LogOut, User, Sun, Moon } from "lucide-react"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useRole, Role } from "@/components/providers/role-provider"
+import { useTheme } from "next-themes"
 import { useSidebar } from "@/contexts/SidebarContext"
 import { toast } from "sonner"
 
@@ -11,6 +12,7 @@ export function AppHeader() {
   const { locale, setLocale, t } = useTranslation()
   const { role, setRole } = useRole()
   const { toggle } = useSidebar()
+  const { theme, setTheme } = useTheme()
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showRoleMenu, setShowRoleMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
@@ -100,6 +102,15 @@ export function AppHeader() {
       
       <div className="flex items-center gap-4">
 
+        {/* Theme Toggle */}
+        <button
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-muted"
+        >
+          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 hidden dark:block" />
+          <Moon className="h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 dark:hidden" />
+          <span className="sr-only">Toggle theme</span>
+        </button>
 
         {/* Language Switcher */}
         <div ref={langRef} className="relative">

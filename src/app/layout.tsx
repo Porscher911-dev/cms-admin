@@ -9,8 +9,8 @@ import { RoleProvider } from "@/components/providers/role-provider";
 const inter = Inter({ subsets: ["latin", "vietnamese"] });
 
 export const metadata: Metadata = {
-  title: "AgencyHub Pro | Hệ thống quản trị doanh nghiệp",
-  description: "ERP + CRM + Project Management + Finance Management for Digital Marketing Agencies",
+  title: "Quản trị Mrex Agency",
+  description: "Hệ thống quản trị doanh nghiệp Mrex Agency",
 };
 
 export default function RootLayout({
@@ -23,8 +23,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <TranslationProvider>

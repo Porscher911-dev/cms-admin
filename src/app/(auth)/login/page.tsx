@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -22,27 +23,50 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Mock login logic
-      let userRole = 'EMPLOYEE'
-      if (email.includes('admin') || email.includes('director')) {
-        userRole = 'DIRECTOR'
-      } else if (email.includes('manager')) {
-        userRole = 'MANAGER'
+      const loginEmail = email.trim().toLowerCase()
+      const loginPassword = password.trim()
+      
+      // Only allow the default admin account or an account created in HR
+      if (loginEmail === 'admin@mrex.vn' && loginPassword === '123123') {
+        const userRole = 'DIRECTOR'
+        
+        // Set auth cookie
+        document.cookie = `mrex_auth=true; path=/; max-age=86400` // 1 day
+        
+        // Set role for RoleProvider
+        localStorage.setItem('mrex_demo_role', userRole)
+
+        toast.success('Đăng nhập thành công!')
+        
+        // Short delay for UI effect
+        setTimeout(() => {
+          router.push('/')
+          router.refresh()
+        }, 500)
+      } else {
+        // Check if there are employees in localStorage
+        const stored = localStorage.getItem("mrex_employees")
+        let foundEmployee = null;
+        if (stored) {
+          const employees = JSON.parse(stored)
+          foundEmployee = employees.find((e: any) => e.email.toLowerCase() === loginEmail && e.status === 'ACTIVE')
+        }
+
+        if (foundEmployee && loginPassword === 'Mrex@2026') {
+          const userRole = foundEmployee.systemRole || 'EMPLOYEE'
+          document.cookie = `mrex_auth=true; path=/; max-age=86400`
+          localStorage.setItem('mrex_demo_role', userRole)
+
+          toast.success('Đăng nhập thành công!')
+          setTimeout(() => {
+            router.push('/')
+            router.refresh()
+          }, 500)
+        } else {
+          toast.error('Email hoặc mật khẩu không chính xác!')
+          setIsLoading(false)
+        }
       }
-
-      // Set auth cookie
-      document.cookie = `mrex_auth=true; path=/; max-age=86400` // 1 day
-      
-      // Set role for RoleProvider
-      localStorage.setItem('mrex_demo_role', userRole)
-
-      toast.success('Đăng nhập thành công!')
-      
-      // Short delay for UI effect
-      setTimeout(() => {
-        router.push('/')
-        router.refresh()
-      }, 500)
     } catch (err) {
       toast.error('Có lỗi xảy ra khi đăng nhập.')
       setIsLoading(false)
@@ -55,14 +79,9 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8 flex items-center gap-2"
+        className="mb-8 flex flex-col items-center gap-4"
       >
-        <div className="bg-primary/10 p-3 rounded-2xl">
-          <Building2 className="w-8 h-8 text-primary" />
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Mrex Agency
-        </h1>
+        <img src="/logo.png" alt="Mrex Agency Logo" className="h-16 object-contain" />
       </motion.div>
 
       <motion.div
@@ -100,9 +119,49 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Mật khẩu</Label>
-                  <a href="#" className="text-sm font-medium text-primary hover:underline">
-                    Quên mật khẩu?
-                  </a>
+                  <button 
+                    type="button" 
+                    disabled={isResetting}
+                    onClick={async () => {
+                      if (!email) {
+                        toast.error("Vui lòng nhập email của bạn trước khi yêu cầu khôi phục mật khẩu.");
+                        return;
+                      }
+                      
+                      setIsResetting(true);
+                      try {
+                        const res = await fetch('/api/send-mail', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            to: email,
+                            subject: 'Khôi phục mật khẩu Mrex Agency',
+                            html: `
+                              <h2>Yêu cầu khôi phục mật khẩu</h2>
+                              <p>Chào bạn,</p>
+                              <p>Bạn đã yêu cầu khôi phục mật khẩu cho tài khoản <b>${email}</b>.</p>
+                              <p>Vui lòng liên hệ trực tiếp với <b>Quản trị viên (0362777763)</b> để được cấp lại mật khẩu mới vì lý do bảo mật.</p>
+                              <br/>
+                              <p>Trân trọng,<br/>Đội ngũ Mrex Agency</p>
+                            `
+                          })
+                        });
+                        
+                        if (res.ok) {
+                          toast.success("Hướng dẫn thay đổi mật khẩu đã được gửi đến email của bạn.");
+                        } else {
+                          toast.error("Không thể gửi email. Vui lòng liên hệ Quản trị viên.");
+                        }
+                      } catch (error) {
+                        toast.error("Đã xảy ra lỗi khi gửi email.");
+                      } finally {
+                        setIsResetting(false);
+                      }
+                    }}
+                    className="text-sm font-medium text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isResetting ? "Đang gửi..." : "Quên mật khẩu?"}
+                  </button>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -132,21 +191,9 @@ export default function LoginPage() {
             </form>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 text-center text-sm text-muted-foreground">
-            <div>
-              <p className="mb-2"><strong>Gợi ý tài khoản demo:</strong></p>
-              <div className="flex justify-center gap-4 text-xs font-mono bg-muted/50 p-2 rounded-lg">
-                <span>admin@mrex.vn (Giám đốc)</span>
-              </div>
-              <div className="flex justify-center gap-4 text-xs font-mono bg-muted/50 p-2 rounded-lg mt-1">
-                <span>manager@mrex.vn (Quản lý)</span>
-              </div>
-              <div className="flex justify-center gap-4 text-xs font-mono bg-muted/50 p-2 rounded-lg mt-1">
-                <span>nhanvien@mrex.vn (Nhân viên)</span>
-              </div>
-            </div>
             <div className="mt-2">
               Chưa có tài khoản?{' '}
-              <a href="#" className="font-semibold text-primary hover:underline">
+              <a href="tel:0362777763" className="font-semibold text-primary hover:underline">
                 Liên hệ Quản trị viên
               </a>
             </div>
