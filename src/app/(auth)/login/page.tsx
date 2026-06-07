@@ -47,7 +47,7 @@ export default function LoginPage() {
         // Fetch employees from the global database API
         let employees = []
         try {
-          const res = await fetch('/api/employees')
+          const res = await fetch('/api/employees', { cache: 'no-store' })
           if (res.ok) employees = await res.json()
         } catch (e) {}
 

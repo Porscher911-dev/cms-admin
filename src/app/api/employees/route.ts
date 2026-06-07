@@ -15,10 +15,18 @@ export async function GET() {
     if (!fs.existsSync(dataFile)) {
       fs.mkdirSync(path.dirname(dataFile), { recursive: true });
       fs.writeFileSync(dataFile, JSON.stringify(initialEmployees, null, 2));
-      return NextResponse.json(initialEmployees);
+      return NextResponse.json(initialEmployees, {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      });
     }
     const data = fs.readFileSync(dataFile, 'utf8');
-    return NextResponse.json(JSON.parse(data));
+    return NextResponse.json(JSON.parse(data), {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    });
   } catch (err: any) {
     console.error('API GET employees error:', err);
     return NextResponse.json({ error: 'Failed to read data' }, { status: 500 });

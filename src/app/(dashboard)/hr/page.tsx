@@ -154,7 +154,7 @@ export default function HRPage() {
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const res = await fetch('/api/employees')
+        const res = await fetch('/api/employees', { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
           setEmployees(data)
@@ -195,7 +195,8 @@ export default function HRPage() {
       await fetch('/api/employees', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEmployees)
+        body: JSON.stringify(newEmployees),
+        cache: 'no-store'
       })
     } catch(e) {}
   }
