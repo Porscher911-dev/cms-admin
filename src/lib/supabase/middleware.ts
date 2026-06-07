@@ -9,7 +9,9 @@ export async function updateSession(request: NextRequest) {
   const isAuthenticated = request.cookies.has('mrex_auth')
 
   // Define public routes that do not require authentication
-  const isPublicRoute = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register'
+  const isPublicRoute = request.nextUrl.pathname === '/login' || 
+                        request.nextUrl.pathname === '/register' || 
+                        request.nextUrl.pathname.startsWith('/api/')
 
   if (!isAuthenticated && !isPublicRoute) {
     const url = request.nextUrl.clone()

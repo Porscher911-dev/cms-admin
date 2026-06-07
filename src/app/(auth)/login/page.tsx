@@ -44,13 +44,14 @@ export default function LoginPage() {
           router.refresh()
         }, 500)
       } else {
-        // Check if there are employees in localStorage
-        const stored = localStorage.getItem("mrex_employees")
-        let foundEmployee = null;
-        if (stored) {
-          const employees = JSON.parse(stored)
-          foundEmployee = employees.find((e: any) => e.email.toLowerCase() === loginEmail && e.status === 'ACTIVE')
-        }
+        // Fetch employees from the global database API
+        let employees = []
+        try {
+          const res = await fetch('/api/employees')
+          if (res.ok) employees = await res.json()
+        } catch (e) {}
+
+        const foundEmployee = employees.find((e: any) => e.email.toLowerCase() === loginEmail && e.status === 'ACTIVE')
 
         if (foundEmployee && loginPassword === 'Mrex@2026') {
           const userRole = foundEmployee.systemRole || 'EMPLOYEE'
@@ -63,10 +64,10 @@ export default function LoginPage() {
             router.refresh()
           }, 500)
         } else {
-          if (!stored) {
-            toast.error('Lỗi: Trình duyệt của bạn chưa lưu danh sách nhân sự nào (Hãy đăng nhập admin và tạo lại).')
+          if (employees.length === 0) {
+            toast.error('Lỗi: Hệ thống chưa có nhân sự nào (Hãy đăng nhập admin và tạo).')
           } else if (!foundEmployee) {
-            const allEmails = JSON.parse(stored).map((e: any) => e.email).join(', ')
+            const allEmails = employees.map((e: any) => e.email).join(', ')
             toast.error(`Không tìm thấy tài khoản: ${loginEmail}. (Các email đang có: ${allEmails})`)
           } else if (loginPassword !== 'Mrex@2026') {
             toast.error(`Sai mật khẩu! Bạn đã nhập: ${loginPassword}`)

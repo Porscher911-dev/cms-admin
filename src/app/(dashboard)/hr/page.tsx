@@ -152,13 +152,20 @@ export default function HRPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
-    const stored = localStorage.getItem("mrex_employees")
-    if (stored) {
-      setEmployees(JSON.parse(stored))
-    } else {
-      setEmployees(initialEmployees)
-      localStorage.setItem("mrex_employees", JSON.stringify(initialEmployees))
+    const loadEmployees = async () => {
+      try {
+        const res = await fetch('/api/employees')
+        if (res.ok) {
+          const data = await res.json()
+          setEmployees(data)
+        } else {
+          setEmployees(initialEmployees)
+        }
+      } catch (e) {
+        setEmployees(initialEmployees)
+      }
     }
+    loadEmployees()
   }, [])
 
   const filteredEmployees = employees.filter(e =>
@@ -170,7 +177,7 @@ export default function HRPage() {
   const activeCount = employees.filter(e => e.status === "ACTIVE").length
   const leaveCount = employees.filter(e => e.status === "ON_LEAVE").length
 
-  const handleSaveEmployee = (saved: any) => {
+  const handleSaveEmployee = async (saved: any) => {
     let newEmployees;
     if (empToEdit) {
       newEmployees = employees.map(e => e.id === saved.id ? saved : e)
@@ -180,9 +187,17 @@ export default function HRPage() {
       toast.success("Đã thêm nhân viên mới!")
     }
     setEmployees(newEmployees)
-    localStorage.setItem("mrex_employees", JSON.stringify(newEmployees))
     setShowModal(false)
     setEmpToEdit(null)
+    
+    // Save to global database
+    try {
+      await fetch('/api/employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEmployees)
+      })
+    } catch(e) {}
   }
 
   return (
@@ -327,10 +342,18 @@ export default function HRPage() {
       {showModal && <EmployeeModal isOpen={showModal} onClose={() => { setShowModal(false); setEmpToEdit(null) }} onSave={handleSaveEmployee} empToEdit={empToEdit} />}
       {deleteId && (
         <ConfirmModal isOpen={!!deleteId} title="Xóa nhân viên" message="Bạn có chắc chắn muốn xóa nhân viên này? Hành động không thể hoàn tác."
-          onConfirm={() => { 
+          onConfirm={async () => { 
             const newEmployees = employees.filter(e => e.id !== deleteId);
             setEmployees(newEmployees);
-            localStorage.setItem("mrex_employees", JSON.stringify(newEmployees));
+            
+            try {
+              await fetch('/api/employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newEmployees)
+              })
+            } catch(e) {}
+
             toast.success("Đã xóa nhân viên!"); 
             setDeleteId(null);
           }}
