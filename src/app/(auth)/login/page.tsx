@@ -22,21 +22,29 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        toast.error(error.message)
-      } else {
-        toast.success('Đăng nhập thành công!')
-        router.push('/')
+      // Mock login logic
+      let userRole = 'EMPLOYEE'
+      if (email.includes('admin') || email.includes('director')) {
+        userRole = 'DIRECTOR'
+      } else if (email.includes('manager')) {
+        userRole = 'MANAGER'
       }
+
+      // Set auth cookie
+      document.cookie = `mrex_auth=true; path=/; max-age=86400` // 1 day
+      
+      // Set role for RoleProvider
+      localStorage.setItem('mrex_demo_role', userRole)
+
+      toast.success('Đăng nhập thành công!')
+      
+      // Short delay for UI effect
+      setTimeout(() => {
+        router.push('/')
+        router.refresh()
+      }, 500)
     } catch (err) {
       toast.error('Có lỗi xảy ra khi đăng nhập.')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -125,6 +133,18 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4 text-center text-sm text-muted-foreground">
             <div>
+              <p className="mb-2"><strong>Gợi ý tài khoản demo:</strong></p>
+              <div className="flex justify-center gap-4 text-xs font-mono bg-muted/50 p-2 rounded-lg">
+                <span>admin@mrex.vn (Giám đốc)</span>
+              </div>
+              <div className="flex justify-center gap-4 text-xs font-mono bg-muted/50 p-2 rounded-lg mt-1">
+                <span>manager@mrex.vn (Quản lý)</span>
+              </div>
+              <div className="flex justify-center gap-4 text-xs font-mono bg-muted/50 p-2 rounded-lg mt-1">
+                <span>nhanvien@mrex.vn (Nhân viên)</span>
+              </div>
+            </div>
+            <div className="mt-2">
               Chưa có tài khoản?{' '}
               <a href="#" className="font-semibold text-primary hover:underline">
                 Liên hệ Quản trị viên

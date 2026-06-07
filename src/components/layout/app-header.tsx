@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Bell, Search, Menu, Globe, Shield, X } from "lucide-react"
+import { Bell, Search, Menu, Globe, Shield, X, LogOut, User } from "lucide-react"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useRole, Role } from "@/components/providers/role-provider"
 import { useSidebar } from "@/contexts/SidebarContext"
@@ -14,12 +14,14 @@ export function AppHeader() {
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showRoleMenu, setShowRoleMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   
   const [notifications, setNotifications] = useState<any[]>([])
 
   const langRef = useRef<HTMLDivElement>(null)
   const roleRef = useRef<HTMLDivElement>(null)
   const notiRef = useRef<HTMLDivElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
 
   // Load notifications from localStorage and listen to updates
   useEffect(() => {
@@ -61,6 +63,7 @@ export function AppHeader() {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setShowLangMenu(false)
       if (roleRef.current && !roleRef.current.contains(e.target as Node)) setShowRoleMenu(false)
       if (notiRef.current && !notiRef.current.contains(e.target as Node)) setShowNotifications(false)
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setShowProfileMenu(false)
     }
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
@@ -71,6 +74,11 @@ export function AppHeader() {
     if (!n.forRoles) return true // visible to all if not specified
     return n.forRoles.includes(role)
   })
+
+  const handleLogout = () => {
+    document.cookie = 'mrex_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    window.location.href = '/login'
+  }
 
   const unreadCount = visibleNotifications.filter(n => !n.read).length
 
@@ -161,8 +169,34 @@ export function AppHeader() {
         </div>
 
         {/* User Avatar */}
-        <div className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-medium cursor-pointer">
-          T
+        <div ref={profileRef} className="relative">
+          <div 
+            onClick={() => { setShowProfileMenu(!showProfileMenu); setShowNotifications(false); setShowLangMenu(false); }}
+            className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-medium cursor-pointer hover:bg-primary/30 transition-colors"
+          >
+            T
+          </div>
+
+          {showProfileMenu && (
+            <div className="absolute top-full right-0 mt-2 w-48 bg-card border rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="px-4 py-2 border-b">
+                <p className="text-sm font-semibold text-foreground">Toby Vu</p>
+                <p className="text-xs text-muted-foreground">{role}</p>
+              </div>
+              <button 
+                onClick={() => { window.location.href = '/settings'; setShowProfileMenu(false); }}
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <User className="w-4 h-4" /> Cài đặt tài khoản
+              </button>
+              <button 
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-destructive/10 transition-colors flex items-center gap-2 text-destructive font-medium border-t mt-1"
+              >
+                <LogOut className="w-4 h-4" /> Đăng xuất
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
