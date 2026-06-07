@@ -170,15 +170,16 @@ export function AppHeader() {
 
         {/* User Avatar */}
         <div ref={profileRef} className="relative">
-          <div 
+          <button 
+            type="button"
             onClick={() => { setShowProfileMenu(!showProfileMenu); setShowNotifications(false); setShowLangMenu(false); }}
-            className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-medium cursor-pointer hover:bg-primary/30 transition-colors"
+            className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-medium cursor-pointer hover:bg-primary/30 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             T
-          </div>
+          </button>
 
           {showProfileMenu && (
-            <div className="absolute top-full right-0 mt-2 w-48 bg-card border rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute top-full right-0 mt-2 w-48 bg-card border rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
               <div className="px-4 py-2 border-b">
                 <p className="text-sm font-semibold text-foreground">Toby Vu</p>
                 <p className="text-xs text-muted-foreground">{role}</p>
