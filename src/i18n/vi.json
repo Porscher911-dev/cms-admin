@@ -1,0 +1,53 @@
+{
+  "sidebar": {
+    "dashboard": "Tổng quan",
+    "clients": "Khách hàng",
+    "projects": "Dự án",
+    "sales": "Kinh doanh",
+    "hr": "Nhân sự",
+    "finance": "Tài chính",
+    "calendar": "Lịch",
+    "approvals": "Phê duyệt",
+    "settings": "Cài đặt",
+    "workspace": "Không gian của tôi",
+    "admin": "Quản trị Hệ thống",
+    "company": "Công ty & Nội bộ",
+    "tasks": "Công việc",
+    "reports": "Báo cáo ngày",
+    "attendance": "Chấm công & Xin nghỉ"
+  },
+  "header": {
+    "search": "Tìm kiếm...",
+    "lang_vi": "Tiếng Việt",
+    "lang_en": "English"
+  },
+  "dashboard": {
+    "title": "Dashboard Giám Đốc",
+    "subtitle": "Tổng quan hoạt động kinh doanh của Agency hôm nay.",
+    "filter_30_days": "30 ngày qua",
+    "filter_this_month": "Tháng này",
+    "filter_this_quarter": "Quý này",
+    "filter_this_year": "Năm nay",
+    "download_report": "Tải Báo Cáo",
+    "total_revenue": "Tổng Doanh Thu",
+    "active_clients": "Khách Hàng Active",
+    "active_projects": "Dự Án Đang Chạy",
+    "net_profit": "Lợi Nhuận Ròng",
+    "vs_last_month": "so với tháng trước",
+    "chart_title": "Doanh thu & Lợi nhuận",
+    "revenue": "Doanh thu",
+    "profit": "Lợi nhuận",
+    "new_leads": "Leads Mới",
+    "view_all": "Xem tất cả",
+    "company_sample": "Công ty TNHH Mẫu",
+    "contacted_ago": "Đã liên hệ {hours} giờ trước",
+    "hot": "Hot",
+    "month_1": "Tháng 1",
+    "month_2": "Tháng 2",
+    "month_3": "Tháng 3",
+    "month_4": "Tháng 4",
+    "month_5": "Tháng 5",
+    "month_6": "Tháng 6",
+    "month_7": "Tháng 7"
+  }
+}

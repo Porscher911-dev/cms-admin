@@ -1,0 +1,53 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "clients": "Clients",
+    "projects": "Projects",
+    "sales": "Sales Pipeline",
+    "hr": "HR & Time",
+    "finance": "Finance",
+    "calendar": "Calendar",
+    "approvals": "Approvals",
+    "settings": "Settings",
+    "workspace": "My Workspace",
+    "admin": "User Management",
+    "company": "Company Portal",
+    "tasks": "Tasks",
+    "reports": "Daily Reports",
+    "attendance": "Time & Leave"
+  },
+  "header": {
+    "search": "Search anything...",
+    "lang_vi": "Tiếng Việt",
+    "lang_en": "English"
+  },
+  "dashboard": {
+    "title": "Director Dashboard",
+    "subtitle": "Overview of agency business activities today.",
+    "filter_30_days": "Last 30 days",
+    "filter_this_month": "This month",
+    "filter_this_quarter": "This quarter",
+    "filter_this_year": "This year",
+    "download_report": "Download Report",
+    "total_revenue": "Total Revenue",
+    "active_clients": "Active Clients",
+    "active_projects": "Active Projects",
+    "net_profit": "Net Profit",
+    "vs_last_month": "vs last month",
+    "chart_title": "Revenue & Profit",
+    "revenue": "Revenue",
+    "profit": "Profit",
+    "new_leads": "New Leads",
+    "view_all": "View all",
+    "company_sample": "Sample Company",
+    "contacted_ago": "Contacted {hours} hours ago",
+    "hot": "Hot",
+    "month_1": "Jan",
+    "month_2": "Feb",
+    "month_3": "Mar",
+    "month_4": "Apr",
+    "month_5": "May",
+    "month_6": "Jun",
+    "month_7": "Jul"
+  }
+}

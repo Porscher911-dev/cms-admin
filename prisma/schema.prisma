@@ -1,0 +1,330 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------------------------------
+// USER & RBAC
+// -----------------------------------------------------------------------------
+
+enum Role {
+  SUPER_ADMIN
+  DIRECTOR
+  OPS_MANAGER
+  SALES_MANAGER
+  SALES_REP
+  SEO_MANAGER
+  SEO_STAFF
+  ADS_MANAGER
+  ADS_STAFF
+  CONTENT_MANAGER
+  CONTENT_STAFF
+  DESIGNER
+  VIDEO_EDITOR
+  ACCOUNTANT
+  HR
+  CLIENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  role          Role      @default(CLIENT)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  managedClients Client[] @relation("AccountManager")
+  tasks          Task[]   @relation("TaskAssignees")
+  attendances    Attendance[]
+  payrolls       Payroll[]
+  approvalsSent  ApprovalRequest[] @relation("Requester")
+  approvalsRcvd  ApprovalRequest[] @relation("Approver")
+}
+
+// -----------------------------------------------------------------------------
+// CRM & SALES
+// -----------------------------------------------------------------------------
+
+model Client {
+  id            String    @id @default(cuid())
+  companyName   String
+  contactName   String
+  email         String
+  phone         String?
+  address       String?
+  taxCode       String?
+  website       String?
+  notes         String?
+  status        ClientStatus @default(LEAD)
+  
+  // Relations
+  accountManagerId String?
+  accountManager   User?     @relation("AccountManager", fields: [accountManagerId], references: [id])
+  
+  contracts     Contract[]
+  projects      Project[]
+  invoices      Invoice[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum ClientStatus {
+  LEAD
+  CONTACTED
+  CONSULTING
+  QUOTED
+  NEGOTIATING
+  WON
+  LOST
+  ACTIVE
+  INACTIVE
+}
+
+model Contract {
+  id            String    @id @default(cuid())
+  title         String
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id])
+  value         Float
+  startDate     DateTime
+  endDate       DateTime?
+  status        ContractStatus @default(DRAFT)
+  fileUrl       String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+// -----------------------------------------------------------------------------
+// PROJECT MANAGEMENT
+// -----------------------------------------------------------------------------
+
+model Project {
+  id            String    @id @default(cuid())
+  name          String
+  description   String?
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id])
+  type          ProjectType
+  status        ProjectStatus @default(PLANNING)
+  startDate     DateTime?
+  endDate       DateTime?
+
+  tasks         Task[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum ProjectType {
+  SOCIAL_CONTENT
+  DESIGN
+  VIDEO
+  WEBSITE
+  SEO
+  GOOGLE_ADS
+  FACEBOOK_ADS
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+model Task {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id])
+  status        TaskStatus @default(TODO)
+  priority      Priority   @default(MEDIUM)
+  dueDate       DateTime?
+  
+  assignees     User[]    @relation("TaskAssignees")
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  APPROVED
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// -----------------------------------------------------------------------------
+// HR & FINANCE
+// -----------------------------------------------------------------------------
+
+model Attendance {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  date          DateTime
+  checkIn       DateTime?
+  checkOut      DateTime?
+  type          AttendanceType @default(OFFICE)
+  status        AttendanceStatus @default(PRESENT)
+  ipAddress     String?
+  gpsLocation   String?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum AttendanceType {
+  OFFICE
+  REMOTE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EARLY_LEAVE
+  OVERTIME
+}
+
+model Payroll {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  month         Int
+  year          Int
+  baseSalary    Float
+  allowance     Float     @default(0)
+  bonus         Float     @default(0)
+  commission    Float     @default(0)
+  deduction     Float     @default(0)
+  netSalary     Float
+  status        PaymentStatus @default(PENDING)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Transaction {
+  id            String    @id @default(cuid())
+  title         String
+  amount        Float
+  type          TransactionType
+  category      TransactionCategory
+  date          DateTime  @default(now())
+  description   String?
+  status        PaymentStatus @default(COMPLETED)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionCategory {
+  SEO
+  GOOGLE_ADS
+  FACEBOOK_ADS
+  WEBSITE
+  CONTENT
+  VIDEO
+  PRODUCT_SALE
+  SALARY
+  OFFICE
+  SOFTWARE
+  MARKETING
+  EQUIPMENT
+  FREELANCER
+  UTILITIES
+  OTHER
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  invoiceNumber String    @unique
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id])
+  amount        Float
+  issueDate     DateTime
+  dueDate       DateTime
+  status        PaymentStatus @default(PENDING)
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
+// -----------------------------------------------------------------------------
+// APPROVAL WORKFLOW
+// -----------------------------------------------------------------------------
+
+model ApprovalRequest {
+  id            String    @id @default(cuid())
+  title         String
+  type          ApprovalType
+  content       String    @db.Text
+  status        ApprovalStatus @default(PENDING)
+  
+  requesterId   String
+  requester     User      @relation("Requester", fields: [requesterId], references: [id])
+  
+  approverId    String?
+  approver      User?     @relation("Approver", fields: [approverId], references: [id])
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum ApprovalType {
+  LEAVE
+  EXPENSE
+  PURCHASE
+  PAYROLL
+  CONTENT
+  DESIGN
+  DELIVERABLE
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
