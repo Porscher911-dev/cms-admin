@@ -91,34 +91,7 @@ export function AppHeader() {
       </div>
       
       <div className="flex items-center gap-4">
-        {/* Role Switcher */}
-        <div ref={roleRef} className="relative hidden sm:block">
-          <button 
-            className="flex items-center gap-2 text-xs font-bold text-primary hover:text-primary/80 transition-colors px-3 py-1.5 rounded-lg bg-primary/10"
-            onClick={() => { setShowRoleMenu(!showRoleMenu); setShowLangMenu(false); setShowNotifications(false); }}
-          >
-            <Shield className="w-3.5 h-3.5" />
-            <span>{role}</span>
-          </button>
-          
-          {showRoleMenu && (
-            <div className="absolute top-full right-0 mt-2 w-40 bg-card border rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div className="px-3 py-2 border-b">
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest">Đổi chức danh</p>
-              </div>
-              {(["DIRECTOR", "MANAGER", "EMPLOYEE"] as Role[]).map((r) => (
-                <button 
-                  key={r}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 ${role === r ? 'text-primary font-semibold bg-primary/5' : 'text-muted-foreground'}`}
-                  onClick={() => { setRole(r); setShowRoleMenu(false); }}
-                >
-                  <div className={`w-2 h-2 rounded-full ${role === r ? 'bg-primary' : 'bg-transparent'}`}></div>
-                  {r === "DIRECTOR" ? "Ban Giám đốc" : r === "MANAGER" ? "Quản lý" : "Nhân viên"}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+
 
         {/* Language Switcher */}
         <div ref={langRef} className="relative">
