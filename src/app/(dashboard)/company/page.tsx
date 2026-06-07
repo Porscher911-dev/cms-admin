@@ -42,17 +42,40 @@ export default function CompanyPortalPage() {
   const [editDepartments, setEditDepartments] = useState(departments)
 
   useEffect(() => {
-    const savedAnnouncements = localStorage.getItem("mrex_announcements")
-    if (savedAnnouncements) setAnnouncements(JSON.parse(savedAnnouncements))
-    
-    const savedPolicies = localStorage.getItem("mrex_policies")
-    if (savedPolicies) {
-      setPolicies(savedPolicies)
-      setEditPolicyText(savedPolicies)
+    const loadData = async () => {
+      try {
+        const resAnn = await fetch('/api/db?collection=announcements', { cache: 'no-store' })
+        if (resAnn.ok) {
+          const data = await resAnn.json()
+          if (data && data.length > 0) setAnnouncements(data)
+          else setAnnouncements(MOCK_ANNOUNCEMENTS)
+        }
+      } catch (e) {}
+
+      try {
+        const resPol = await fetch('/api/db?collection=policies', { cache: 'no-store' })
+        if (resPol.ok) {
+          const data = await resPol.json()
+          if (data && data.text) {
+            setPolicies(data.text)
+            setEditPolicyText(data.text)
+          } else {
+            setPolicies(MOCK_POLICIES)
+            setEditPolicyText(MOCK_POLICIES)
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const resDept = await fetch('/api/db?collection=departments', { cache: 'no-store' })
+        if (resDept.ok) {
+          const data = await resDept.json()
+          if (data && data.length > 0) setDepartments(data)
+          else setDepartments(MOCK_DEPARTMENTS)
+        }
+      } catch (e) {}
     }
-      
-    const savedDepartments = localStorage.getItem("mrex_departments")
-    if (savedDepartments) setDepartments(JSON.parse(savedDepartments))
+    loadData()
   }, [])
 
   // Form State
@@ -78,7 +101,12 @@ export default function CompanyPortalPage() {
     
     const newAnns = [newItem, ...announcements]
     setAnnouncements(newAnns)
-    localStorage.setItem("mrex_announcements", JSON.stringify(newAnns))
+    fetch('/api/db?collection=announcements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAnns),
+      cache: 'no-store'
+    }).catch(() => {})
     setShowAddAnnouncement(false)
     setNewAnnouncement({ title: '', content: '', isPinned: false, isUrgent: false })
     toast.success("Đã đăng thông báo mới!")
@@ -87,13 +115,23 @@ export default function CompanyPortalPage() {
   const handleDeleteAnnouncement = (id: string) => {
     const newAnns = announcements.filter(a => a.id !== id)
     setAnnouncements(newAnns)
-    localStorage.setItem("mrex_announcements", JSON.stringify(newAnns))
+    fetch('/api/db?collection=announcements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAnns),
+      cache: 'no-store'
+    }).catch(() => {})
     toast.success("Đã xóa thông báo!")
   }
 
   const handleSavePolicies = () => {
     setPolicies(editPolicyText)
-    localStorage.setItem("mrex_policies", editPolicyText)
+    fetch('/api/db?collection=policies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: editPolicyText }),
+      cache: 'no-store'
+    }).catch(() => {})
     setShowEditPolicies(false)
     toast.success("Đã cập nhật nội quy công ty!")
   }
@@ -366,7 +404,17 @@ export default function CompanyPortalPage() {
             </div>
             <div className="p-4 border-t bg-muted/30 flex justify-end gap-3">
               <button onClick={() => setShowEditOrgChart(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">Hủy</button>
-              <button onClick={() => { setDepartments(editDepartments); localStorage.setItem("mrex_departments", JSON.stringify(editDepartments)); setShowEditOrgChart(false); toast.success("Đã cập nhật sơ đồ tổ chức!") }} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Lưu cập nhật</button>
+              <button onClick={() => { 
+                setDepartments(editDepartments); 
+                fetch('/api/db?collection=departments', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(editDepartments),
+                  cache: 'no-store'
+                }).catch(() => {});
+                setShowEditOrgChart(false); 
+                toast.success("Đã cập nhật sơ đồ tổ chức!") 
+              }} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Lưu cập nhật</button>
             </div>
           </motion.div>
         </div>

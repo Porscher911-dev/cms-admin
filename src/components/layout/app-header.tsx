@@ -26,30 +26,38 @@ export function AppHeader() {
   const notiRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
 
-  // Load notifications from localStorage and listen to updates
+  // Load notifications from API and listen to updates
   useEffect(() => {
-    const loadNotifs = () => {
-      const storedNotifs = localStorage.getItem("mrex_notifications")
-      if (storedNotifs) {
-        setNotifications(JSON.parse(storedNotifs))
-      } else {
-        const defaultNotifs = [
-          { id: 1, text: "Bạn có 1 đơn nghỉ phép mới cần duyệt", time: "5 phút trước", read: false },
-          { id: 2, text: "Task 'Thiết kế banner' đã được hoàn thành", time: "30 phút trước", read: false },
-          { id: 3, text: "Company Trip 2026 vừa được công bố!", time: "1 giờ trước", read: true },
-        ]
-        setNotifications(defaultNotifs)
-        localStorage.setItem("mrex_notifications", JSON.stringify(defaultNotifs))
-      }
+    const loadNotifs = async () => {
+      try {
+        const res = await fetch('/api/db?collection=notifications', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data && data.length > 0) {
+            setNotifications(data)
+          } else {
+            const defaultNotifs = [
+              { id: 1, text: "Bạn có 1 đơn nghỉ phép mới cần duyệt", time: "5 phút trước", read: false },
+              { id: 2, text: "Task 'Thiết kế banner' đã được hoàn thành", time: "30 phút trước", read: false },
+              { id: 3, text: "Company Trip 2026 vừa được công bố!", time: "1 giờ trước", read: true },
+            ]
+            setNotifications(defaultNotifs)
+            fetch('/api/db?collection=notifications', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(defaultNotifs),
+              cache: 'no-store'
+            }).catch(() => {})
+          }
+        }
+      } catch (e) {}
     }
 
     loadNotifs()
 
-    window.addEventListener("storage", loadNotifs)
     const interval = setInterval(loadNotifs, 2000)
 
     return () => {
-      window.removeEventListener("storage", loadNotifs)
       clearInterval(interval)
     }
   }, [])
@@ -61,7 +69,12 @@ export function AppHeader() {
   const handleMarkAsRead = (id: number) => {
     const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n)
     setNotifications(updated)
-    localStorage.setItem("mrex_notifications", JSON.stringify(updated))
+    fetch('/api/db?collection=notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+      cache: 'no-store'
+    }).catch(() => {})
   }
 
   // Close dropdowns on click outside

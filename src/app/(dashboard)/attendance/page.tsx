@@ -54,100 +54,97 @@ export default function AttendancePage() {
   useEffect(() => {
     setIsMounted(true)
     
-    const storedCheckedIn = localStorage.getItem("attendance_checked_in")
-    const storedCheckInTime = localStorage.getItem("attendance_check_in_time")
-    const storedLogs = localStorage.getItem("attendance_logs")
-    const storedRequests = localStorage.getItem("mrex_leave_requests")
-    
-    // Check if the last check-in was today. If not, reset checked-in status
-    const lastCheckInTimeStr = localStorage.getItem("last_check_in_time_ms")
-    let checkedInToday = false
-    
-    if (lastCheckInTimeStr) {
-      const lastCheckInMs = parseInt(lastCheckInTimeStr, 10)
-      const lastCheckInDate = new Date(lastCheckInMs)
-      
-      if (isToday(lastCheckInDate)) {
-        checkedInToday = true
-        if (storedCheckedIn) {
-          setIsCheckedIn(storedCheckedIn === "true")
-        }
-        if (storedCheckInTime) {
-          setCheckInTime(storedCheckInTime)
-        }
-      }
-    }
-    
-    if (!checkedInToday) {
-      // Reset!
-      setIsCheckedIn(false)
-      setCheckInTime(null)
-      localStorage.setItem("attendance_checked_in", "false")
-      localStorage.removeItem("attendance_check_in_time")
-      localStorage.removeItem("last_check_in_time_ms")
-    }
-    
-    if (storedLogs) {
+    const loadAttendance = async () => {
       try {
-        const parsedLogs = JSON.parse(storedLogs).map((log: any) => ({
-          ...log,
-          timestamp: new Date(log.timestamp)
-        }))
-        // Filter: only keep today's logs
-        const todaysLogs = parsedLogs.filter((log: any) => isToday(log.timestamp))
-        setLogs(todaysLogs)
-        localStorage.setItem("attendance_logs", JSON.stringify(todaysLogs))
-      } catch (e) {
-        console.error(e)
-      }
-    } else {
-      // Default initial mock logs for today
-      const defaultLogs: AttendanceLog[] = [
-        {
-          id: "log-1",
-          type: "CHECK_IN",
-          timestamp: new Date(new Date().setHours(8, 30, 0)),
-          ip: "113.161.79.120",
-          location: "10.7769° N, 106.7009° E (Quận 1, TP.HCM)",
-          isp: "Viettel Telecom"
-        },
-        {
-          id: "log-2",
-          type: "CHECK_OUT",
-          timestamp: new Date(new Date().setHours(12, 0, 0)),
-          ip: "113.161.79.120",
-          location: "10.7769° N, 106.7009° E (Quận 1, TP.HCM)",
-          isp: "Viettel Telecom"
+        const res = await fetch('/api/db?collection=attendance', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data) {
+            const { checkedIn, checkInTime, lastCheckInMs, logs } = data
+            
+            let checkedInToday = false
+            if (lastCheckInMs) {
+              const lastCheckInDate = new Date(lastCheckInMs)
+              if (isToday(lastCheckInDate)) {
+                checkedInToday = true
+                setIsCheckedIn(checkedIn === "true" || checkedIn === true)
+                setCheckInTime(checkInTime)
+              }
+            }
+            
+            if (!checkedInToday) {
+              setIsCheckedIn(false)
+              setCheckInTime(null)
+            }
+            
+            if (logs) {
+              const parsedLogs = logs.map((log: any) => ({
+                ...log,
+                timestamp: new Date(log.timestamp)
+              }))
+              const todaysLogs = parsedLogs.filter((log: any) => isToday(log.timestamp))
+              setLogs(todaysLogs)
+            }
+            
+            if (lastCheckInMs && (checkedIn === "true" || checkedIn === true) && checkedInToday) {
+              const elapsed = Date.now() - parseInt(lastCheckInMs, 10)
+              const remaining = Math.max(0, 5 - Math.floor(elapsed / 1000))
+              if (remaining > 0) {
+                setCooldown(remaining)
+              }
+            }
+          } else {
+             // defaults
+             const defaultLogs: AttendanceLog[] = [
+              {
+                id: "log-1",
+                type: "CHECK_IN",
+                timestamp: new Date(new Date().setHours(8, 30, 0)),
+                ip: "113.161.79.120",
+                location: "10.7769° N, 106.7009° E (Quận 1, TP.HCM)",
+                isp: "Viettel Telecom"
+              },
+              {
+                id: "log-2",
+                type: "CHECK_OUT",
+                timestamp: new Date(new Date().setHours(12, 0, 0)),
+                ip: "113.161.79.120",
+                location: "10.7769° N, 106.7009° E (Quận 1, TP.HCM)",
+                isp: "Viettel Telecom"
+              }
+            ]
+            setLogs(defaultLogs)
+          }
         }
-      ]
-      setLogs(defaultLogs)
-      localStorage.setItem("attendance_logs", JSON.stringify(defaultLogs))
+      } catch (e) {}
+    }
+    
+    const loadLeaveRequests = async () => {
+      try {
+        const res = await fetch('/api/db?collection=leave_requests', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data) {
+            setLeaveRequests(data)
+          } else {
+            const defaultRequests = [
+              { id: "REQ-001", date: "15/06/2026 - 16/06/2026", type: "Nghỉ phép năm", status: "PENDING", reason: "Đi khám sức khỏe định kỳ", user: "Toby Vu" },
+              { id: "REQ-002", date: "02/05/2026 - 02/05/2026", type: "Nghỉ ốm", status: "APPROVED", reason: "Sốt siêu vi", user: "Toby Vu" },
+            ]
+            setLeaveRequests(defaultRequests)
+            fetch('/api/db?collection=leave_requests', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(defaultRequests),
+              cache: 'no-store'
+            }).catch(() => {})
+          }
+        }
+      } catch (e) {}
     }
 
-    // Load leave requests
-    if (storedRequests) {
-      try {
-        setLeaveRequests(JSON.parse(storedRequests))
-      } catch (e) {
-        console.error(e)
-      }
-    } else {
-      const defaultRequests = [
-        { id: "REQ-001", date: "15/06/2026 - 16/06/2026", type: "Nghỉ phép năm", status: "PENDING", reason: "Đi khám sức khỏe định kỳ", user: "Toby Vu" },
-        { id: "REQ-002", date: "02/05/2026 - 02/05/2026", type: "Nghỉ ốm", status: "APPROVED", reason: "Sốt siêu vi", user: "Toby Vu" },
-      ]
-      setLeaveRequests(defaultRequests)
-      localStorage.setItem("mrex_leave_requests", JSON.stringify(defaultRequests))
-    }
-
-    // Cooldown check on mount
-    if (lastCheckInTimeStr && storedCheckedIn === "true" && checkedInToday) {
-      const elapsed = Date.now() - parseInt(lastCheckInTimeStr, 10)
-      const remaining = Math.max(0, 5 - Math.floor(elapsed / 1000))
-      if (remaining > 0) {
-        setCooldown(remaining)
-      }
-    }
+    loadAttendance()
+    loadLeaveRequests()
 
     // Get IP and ISP info in a single call
     fetch("https://ipapi.co/json/")
@@ -179,11 +176,14 @@ export default function AttendancePage() {
   // Listener to keep leave request list updated if approved on Approvals page
   useEffect(() => {
     if (!isMounted) return
-    const handleStorageChange = () => {
-      const storedRequests = localStorage.getItem("mrex_leave_requests")
-      if (storedRequests) {
-        setLeaveRequests(JSON.parse(storedRequests))
-      }
+    const handleStorageChange = async () => {
+      try {
+        const res = await fetch('/api/db?collection=leave_requests', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data) setLeaveRequests(data)
+        }
+      } catch (e) {}
     }
     window.addEventListener("storage", handleStorageChange)
     // Also poll every 2 seconds for a seamless realtime feel during dual role demo!
@@ -203,22 +203,24 @@ export default function AttendancePage() {
     }
   }, [cooldown])
 
-  const saveLogs = (newLogs: AttendanceLog[]) => {
+  const saveAttendanceData = (newLogs: AttendanceLog[], checkedIn: boolean, time: string | null) => {
     setLogs(newLogs)
-    localStorage.setItem("attendance_logs", JSON.stringify(newLogs))
-  }
-
-  const saveCheckedInState = (checkedIn: boolean, time: string | null) => {
     setIsCheckedIn(checkedIn)
     setCheckInTime(time)
-    localStorage.setItem("attendance_checked_in", String(checkedIn))
-    if (time) {
-      localStorage.setItem("attendance_check_in_time", time)
-      localStorage.setItem("last_check_in_time_ms", String(Date.now()))
-    } else {
-      localStorage.removeItem("attendance_check_in_time")
-      localStorage.removeItem("last_check_in_time_ms")
+    
+    const attendanceData = {
+      logs: newLogs,
+      checkedIn,
+      checkInTime: time,
+      lastCheckInMs: time ? String(Date.now()) : null
     }
+    
+    fetch('/api/db?collection=attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(attendanceData),
+      cache: 'no-store'
+    }).catch(() => {})
   }
 
   const handleCheckIn = () => {
@@ -236,8 +238,7 @@ export default function AttendancePage() {
       }
       
       const updatedLogs = [newLog, ...logs]
-      saveLogs(updatedLogs)
-      saveCheckedInState(false, null)
+      saveAttendanceData(updatedLogs, false, null)
       toast.success("Check Out thành công!")
     } else {
       const now = new Date()
@@ -253,8 +254,7 @@ export default function AttendancePage() {
       }
       
       const updatedLogs = [newLog, ...logs]
-      saveLogs(updatedLogs)
-      saveCheckedInState(true, timeStr)
+      saveAttendanceData(updatedLogs, true, timeStr)
       setCooldown(5)
       toast.success("Check In thành công!")
     }
@@ -283,29 +283,32 @@ export default function AttendancePage() {
 
     const updated = [newRequest, ...leaveRequests]
     setLeaveRequests(updated)
-    localStorage.setItem("mrex_leave_requests", JSON.stringify(updated))
+    fetch('/api/db?collection=leave_requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+      cache: 'no-store'
+    }).catch(() => {})
 
     // Send notification to DIRECTOR and MANAGER
-    const storedNotifs = localStorage.getItem("mrex_notifications")
-    let notifs = []
-    if (storedNotifs) {
-      try {
-        notifs = JSON.parse(storedNotifs)
-      } catch (e) {
-        console.error(e)
-      }
-    }
-    const newNotif = {
-      id: Date.now() + Math.random(),
-      text: `Nhân viên Toby Vu đã gửi đơn xin nghỉ phép mới (${newRequest.type})`,
-      time: "Vừa xong",
-      read: false
-    }
-    const updatedNotifs = [newNotif, ...notifs]
-    localStorage.setItem("mrex_notifications", JSON.stringify(updatedNotifs))
-
-    // Trigger storage event manually for same-tab updates
-    window.dispatchEvent(new Event("storage"))
+    fetch('/api/db?collection=notifications', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(notifs => {
+        const newNotif = {
+          id: Date.now() + Math.random(),
+          text: `Nhân viên Toby Vu đã gửi đơn xin nghỉ phép mới (${newRequest.type})`,
+          time: "Vừa xong",
+          read: false
+        }
+        const updatedNotifs = [newNotif, ...(notifs || [])]
+        fetch('/api/db?collection=notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedNotifs),
+          cache: 'no-store'
+        }).catch(() => {})
+      })
+      .catch(() => {})
 
     toast.success("Đã gửi đơn xin nghỉ phép thành công!")
     setShowLeaveForm(false)
@@ -422,25 +425,7 @@ export default function AttendancePage() {
               <div className="pt-2 flex justify-center border-t border-dashed border-muted-foreground/10">
                 <button 
                   onClick={() => {
-                    localStorage.removeItem("attendance_checked_in")
-                    localStorage.removeItem("attendance_check_in_time")
-                    localStorage.removeItem("attendance_logs")
-                    localStorage.removeItem("last_check_in_time_ms")
-                    setIsCheckedIn(false)
-                    setCheckInTime(null)
-                    // Set mock default logs
-                    const defaultLogs = [
-                      {
-                        id: "log-1",
-                        type: "CHECK_IN" as const,
-                        timestamp: new Date(new Date().setHours(8, 30, 0)),
-                        ip: userIp,
-                        location: userLocation,
-                        isp: userIsp
-                      }
-                    ]
-                    setLogs(defaultLogs)
-                    localStorage.setItem("attendance_logs", JSON.stringify(defaultLogs))
+                    saveAttendanceData([], false, null)
                     toast.success("Đã đặt lại dữ liệu chấm công (Chế độ Thử nghiệm)!")
                   }}
                   className="text-[10px] text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer hover:underline"

@@ -349,22 +349,36 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     setMounted(true)
-    const saved = localStorage.getItem("mrex_projects")
-    if (saved) {
+    const loadProjects = async () => {
       try {
-        setProjects(JSON.parse(saved))
+        const res = await fetch('/api/db?collection=projects', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data) setProjects(data)
+        } else {
+          await fetch('/api/db?collection=projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(initialProjects),
+            cache: 'no-store'
+          })
+          setProjects(initialProjects)
+        }
       } catch (e) {
         setProjects(initialProjects)
       }
-    } else {
-      setProjects(initialProjects)
-      localStorage.setItem("mrex_projects", JSON.stringify(initialProjects))
     }
+    loadProjects()
   }, [])
 
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("mrex_projects", JSON.stringify(projects))
+    if (mounted && projects.length > 0) {
+      fetch('/api/db?collection=projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projects),
+        cache: 'no-store'
+      }).catch(() => {})
     }
   }, [projects, mounted])
 

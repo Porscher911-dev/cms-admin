@@ -556,6 +556,26 @@ export default function TasksPage() {
   const [kanban, setKanban] = useState<KanbanData>(initialKanbanData)
   const [selectedTask, setSelectedTask] = useState<{ task: Task; column: ColumnId } | null>(null)
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const res = await fetch('/api/db?collection=tasks', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data) setKanban(data)
+        } else {
+          await fetch('/api/db?collection=tasks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(initialKanbanData),
+            cache: 'no-store'
+          })
+        }
+      } catch (e) {}
+    }
+    loadData()
+  }, [])
+
   // DnD state
   const dragTaskIdRef = useRef<string | null>(null)
   const dragFromColumnRef = useRef<ColumnId | null>(null)
@@ -585,34 +605,17 @@ export default function TasksPage() {
       if (toColumn === "done") {
         toast.success(`✅ "${movedTask.title}" đã hoàn thành! Tiến độ dự án đã cập nhật.`)
       } else if (toColumn === "review") {
-        // Notify managers & directors via header notification bell
-        toast(
-          `📋 "${movedTask.title}" đã chuyển sang REVIEW — Quản lý & Ban Giám đốc đã nhận thông báo!`,
-          { duration: 5000 }
-        )
-        // Push notification to localStorage for the header bell
-        try {
-          const stored = localStorage.getItem("mrex_notifications")
-          const existing = stored ? JSON.parse(stored) : []
-          const now = new Date()
-          const timeStr = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`
-          const newNotifs = [
-            {
-              id: Math.random(),
-              text: `🔔 [REVIEW] Nhân viên ${movedTask.assignee} đã chuyển task "${movedTask.title}" sang Review — cần Quản lý/Ban Giám đốc xem xét.`,
-              time: `Vừa xong lúc ${timeStr}`,
-              read: false,
-              type: "review_request",
-              taskId: movedTask.id,
-              forRoles: ["MANAGER", "DIRECTOR"]
-            },
-            ...existing
-          ]
-          localStorage.setItem("mrex_notifications", JSON.stringify(newNotifs))
-        } catch {}
+        toast(`📋 "${movedTask.title}" đã chuyển sang REVIEW`, { duration: 5000 })
       } else {
         toast.info(`Đã chuyển "${movedTask.title}" sang ${colLabel}`)
       }
+
+      fetch('/api/db?collection=tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+        cache: 'no-store'
+      }).catch(() => {})
 
       return updated
     })
@@ -639,6 +642,14 @@ export default function TasksPage() {
           break
         }
       }
+      
+      fetch('/api/db?collection=tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+        cache: 'no-store'
+      }).catch(() => {})
+
       return updated
     })
 

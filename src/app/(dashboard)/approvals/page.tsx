@@ -110,35 +110,66 @@ export default function ApprovalsPage() {
   const currentUser = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
 
   useEffect(() => {
-    const loadRequests = () => {
-      const storedLeave = localStorage.getItem("mrex_leave_requests")
-      const leaveList = storedLeave ? JSON.parse(storedLeave) : [
-        { id: "REQ-001", date: "15/06/2026 - 16/06/2026", type: "Nghỉ phép năm", status: "PENDING", reason: "Đi khám sức khỏe định kỳ", user: "Nguyễn Văn A" },
-        { id: "REQ-002", date: "02/05/2026 - 02/05/2026", type: "Nghỉ ốm", status: "APPROVED", reason: "Sốt siêu vi", user: "Toby Vu" }
-      ]
+    const loadRequests = async () => {
+      let leaveList: any[] = []
+      let otherList: any[] = []
 
-      const storedOther = localStorage.getItem("mrex_other_requests")
-      const otherList = storedOther ? JSON.parse(storedOther) : [
-        { id: "REQ-003", type: "Tạm ứng", user: "Trần Thị B", date: "06/06/2026", reason: "Mua thiết bị văn phòng ($500)", status: "APPROVED" },
-        { id: "REQ-004", type: "Work From Home", user: "Lê Hoàng C", date: "08/06/2026", reason: "Lý do cá nhân", status: "REJECTED" },
-      ]
+      try {
+        const resLeave = await fetch('/api/db?collection=leave_requests', { cache: 'no-store' })
+        if (resLeave.ok) {
+          const data = await resLeave.json()
+          if (data && data.length > 0) leaveList = data
+        }
+      } catch (e) {}
+
+      if (leaveList.length === 0) {
+        leaveList = [
+          { id: "REQ-001", date: "15/06/2026 - 16/06/2026", type: "Nghỉ phép năm", status: "PENDING", reason: "Đi khám sức khỏe định kỳ", user: "Nguyễn Văn A" },
+          { id: "REQ-002", date: "02/05/2026 - 02/05/2026", type: "Nghỉ ốm", status: "APPROVED", reason: "Sốt siêu vi", user: "Toby Vu" }
+        ]
+      }
+
+      try {
+        const resOther = await fetch('/api/db?collection=other_requests', { cache: 'no-store' })
+        if (resOther.ok) {
+          const data = await resOther.json()
+          if (data && data.length > 0) otherList = data
+        }
+      } catch (e) {}
+
+      if (otherList.length === 0) {
+        otherList = [
+          { id: "REQ-003", type: "Tạm ứng", user: "Trần Thị B", date: "06/06/2026", reason: "Mua thiết bị văn phòng ($500)", status: "APPROVED" },
+          { id: "REQ-004", type: "Work From Home", user: "Lê Hoàng C", date: "08/06/2026", reason: "Lý do cá nhân", status: "REJECTED" },
+        ]
+      }
 
       setRequests([...leaveList, ...otherList])
     }
 
     loadRequests()
-    window.addEventListener("storage", loadRequests)
     const interval = setInterval(loadRequests, 2000)
-    return () => { window.removeEventListener("storage", loadRequests); clearInterval(interval) }
+    return () => { clearInterval(interval) }
   }, [])
 
   const persistRequests = (updatedList: any[]) => {
     const leaveTypes = ["Nghỉ phép", "Nghỉ phép năm", "Nghỉ việc riêng", "Nghỉ ốm"]
     const leaveList = updatedList.filter(r => leaveTypes.includes(r.type))
     const otherList = updatedList.filter(r => !leaveTypes.includes(r.type))
-    localStorage.setItem("mrex_leave_requests", JSON.stringify(leaveList))
-    localStorage.setItem("mrex_other_requests", JSON.stringify(otherList))
-    window.dispatchEvent(new Event("storage"))
+    
+    fetch('/api/db?collection=leave_requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(leaveList),
+      cache: 'no-store'
+    }).catch(() => {})
+
+    fetch('/api/db?collection=other_requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(otherList),
+      cache: 'no-store'
+    }).catch(() => {})
   }
 
   const handleApprove = (id: string) => {

@@ -117,17 +117,26 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true)
-    const saved = localStorage.getItem("mrex_projects")
-    if (saved) {
+    const loadProjects = async () => {
       try {
-        setProjects(JSON.parse(saved))
+        const res = await fetch('/api/db?collection=projects', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data) setProjects(data)
+        } else {
+          await fetch('/api/db?collection=projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(initialProjects),
+            cache: 'no-store'
+          })
+          setProjects(initialProjects)
+        }
       } catch (e) {
         setProjects(initialProjects)
       }
-    } else {
-      setProjects(initialProjects)
-      localStorage.setItem("mrex_projects", JSON.stringify(initialProjects))
     }
+    loadProjects()
   }, [])
 
   const handleToggleDashboardTask = (projectId: string, taskId: string) => {
@@ -156,7 +165,12 @@ export default function Dashboard() {
     })
 
     setProjects(updatedProjects)
-    localStorage.setItem("mrex_projects", JSON.stringify(updatedProjects))
+    fetch('/api/db?collection=projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedProjects),
+      cache: 'no-store'
+    }).catch(() => {})
     toast.success("Đã cập nhật trạng thái công việc!")
   }
 

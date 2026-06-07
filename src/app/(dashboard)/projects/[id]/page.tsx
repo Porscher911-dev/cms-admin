@@ -679,28 +679,40 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     setMounted(true)
-    const saved = localStorage.getItem("mrex_projects")
-    if (saved) {
+    const loadData = async () => {
       try {
-        const parsed = JSON.parse(saved)
-        const found = parsed.find((p: any) => p.id === id)
-        if (found) {
-          setProject(found)
+        const res = await fetch('/api/db?collection=projects', { cache: 'no-store' })
+        if (res.ok) {
+          const parsed = await res.json()
+          if (parsed) {
+            const found = parsed.find((p: any) => p.id === id)
+            if (found) {
+              setProject(found)
+            }
+          }
         }
       } catch (e) {}
     }
+    loadData()
   }, [id])
 
-  const updateProject = (updatedProject: any) => {
+  const updateProject = async (updatedProject: any) => {
     setProject(updatedProject)
-    const saved = localStorage.getItem("mrex_projects")
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        const updatedList = parsed.map((p: any) => p.id === updatedProject.id ? updatedProject : p)
-        localStorage.setItem("mrex_projects", JSON.stringify(updatedList))
-      } catch (e) {}
-    }
+    try {
+      const res = await fetch('/api/db?collection=projects', { cache: 'no-store' })
+      if (res.ok) {
+        const parsed = await res.json()
+        if (parsed) {
+          const updatedList = parsed.map((p: any) => p.id === updatedProject.id ? updatedProject : p)
+          await fetch('/api/db?collection=projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedList),
+            cache: 'no-store'
+          })
+        }
+      }
+    } catch (e) {}
   }
 
   const handleSaveProjectInfo = (editedProj: any) => {
