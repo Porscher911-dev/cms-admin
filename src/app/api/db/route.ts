@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const prisma = globalForPrisma.prisma || new PrismaClient();
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export async function GET(req: Request) {
   try {
@@ -13,16 +16,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Invalid collection name' }, { status: 400 });
     }
 
-    const dataFile = path.join(process.cwd(), 'data', `${collection}.json`);
+    const store = await prisma.store.findUnique({
+      where: { key: collection },
+    });
 
-    if (!fs.existsSync(dataFile)) {
+    if (!store) {
       return NextResponse.json(null, {
         headers: { 'Cache-Control': 'no-store, max-age=0' },
       });
     }
 
-    const data = fs.readFileSync(dataFile, 'utf8');
-    return NextResponse.json(JSON.parse(data), {
+    return NextResponse.json(JSON.parse(store.value), {
       headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
   } catch (err: any) {
@@ -40,11 +44,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid collection name' }, { status: 400 });
     }
 
-    const dataFile = path.join(process.cwd(), 'data', `${collection}.json`);
     const body = await req.json();
+    const valueStr = JSON.stringify(body);
 
-    fs.mkdirSync(path.dirname(dataFile), { recursive: true });
-    fs.writeFileSync(dataFile, JSON.stringify(body, null, 2));
+    await prisma.store.upsert({
+      where: { key: collection },
+      update: { value: valueStr },
+      create: { key: collection, value: valueStr },
+    });
 
     return NextResponse.json({ success: true }, {
       headers: { 'Cache-Control': 'no-store, max-age=0' },
