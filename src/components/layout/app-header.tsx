@@ -17,6 +17,7 @@ export function AppHeader() {
   const [showRoleMenu, setShowRoleMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [mounted, setMounted] = useState(false)
   
   const [notifications, setNotifications] = useState<any[]>([])
 
@@ -51,6 +52,10 @@ export function AppHeader() {
       window.removeEventListener("storage", loadNotifs)
       clearInterval(interval)
     }
+  }, [])
+
+  useEffect(() => {
+    setMounted(true)
   }, [])
 
   const handleMarkAsRead = (id: number) => {
@@ -103,14 +108,14 @@ export function AppHeader() {
       <div className="flex items-center gap-4">
 
         {/* Theme Toggle */}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-muted"
-        >
-          <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 hidden dark:block" />
-          <Moon className="h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 dark:hidden" />
-          <span className="sr-only">Toggle theme</span>
-        </button>
+        {mounted && (
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-lg hover:bg-muted"
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+        )}
 
         {/* Language Switcher */}
         <div ref={langRef} className="relative">
@@ -123,7 +128,7 @@ export function AppHeader() {
           </button>
           
           {showLangMenu && (
-            <div className="absolute top-full right-0 mt-2 w-36 bg-card border rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute top-full right-0 mt-2 w-36 bg-card border rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
               <button 
                 className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors ${locale === 'vi' ? 'text-primary font-semibold bg-primary/5' : 'text-muted-foreground'}`}
                 onClick={() => { setLocale("vi"); setShowLangMenu(false); }}
@@ -155,7 +160,7 @@ export function AppHeader() {
           </button>
 
           {showNotifications && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-card border rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute top-full right-0 mt-2 w-80 bg-card border rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
               <div className="px-4 py-3 border-b flex items-center justify-between">
                 <h3 className="font-bold text-sm">Thông báo</h3>
                 <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{unreadCount} mới</span>
