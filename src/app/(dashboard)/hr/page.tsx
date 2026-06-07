@@ -9,11 +9,11 @@ import {
 } from "lucide-react"
 
 const initialEmployees = [
-  { id: "E01", name: "Nguyễn Văn A", role: "SEO Specialist", systemRole: "EMPLOYEE", department: "SEO", email: "vana@mrex.agency", phone: "0901234567", status: "ACTIVE", attendance: "100%", tasksCompleted: 45, tasksDelayed: 0 },
-  { id: "E02", name: "Trần Thị B", role: "Content Manager", systemRole: "MANAGER", department: "Content", email: "thib@mrex.agency", phone: "0901234568", status: "ON_LEAVE", attendance: "85%", tasksCompleted: 15, tasksDelayed: 3 },
-  { id: "E03", name: "Lê Hoàng C", role: "UI/UX Designer", systemRole: "EMPLOYEE", department: "Design", email: "hoangc@mrex.agency", phone: "0901234569", status: "ACTIVE", attendance: "98%", tasksCompleted: 32, tasksDelayed: 1 },
-  { id: "E04", name: "Phạm D", role: "Ads Optimizer", systemRole: "EMPLOYEE", department: "Google Ads", email: "phamd@mrex.agency", phone: "0901234570", status: "ACTIVE", attendance: "100%", tasksCompleted: 50, tasksDelayed: 0 },
-  { id: "E05", name: "Hoàng E", role: "Creative Director", systemRole: "DIRECTOR", department: "Video", email: "hoange@mrex.agency", phone: "0901234571", status: "ACTIVE", attendance: "92%", tasksCompleted: 28, tasksDelayed: 6 },
+  { id: "E01", name: "Nguyễn Văn A", role: "SEO Specialist", systemRole: "EMPLOYEE", department: "SEO", email: "vana@mrex.agency", phone: "0901234567", cccd: "079012345678", address: "123 Lê Lợi, Q1, TP.HCM", status: "ACTIVE", attendance: "100%", tasksCompleted: 45, tasksDelayed: 0 },
+  { id: "E02", name: "Trần Thị B", role: "Content Manager", systemRole: "MANAGER", department: "Content", email: "thib@mrex.agency", phone: "0901234568", cccd: "079087654321", address: "456 Nguyễn Huệ, Q1, TP.HCM", status: "ON_LEAVE", attendance: "85%", tasksCompleted: 15, tasksDelayed: 3 },
+  { id: "E03", name: "Lê Hoàng C", role: "UI/UX Designer", systemRole: "EMPLOYEE", department: "Design", email: "hoangc@mrex.agency", phone: "0901234569", cccd: "079112233445", address: "789 Trần Hưng Đạo, Q5, TP.HCM", status: "ACTIVE", attendance: "98%", tasksCompleted: 32, tasksDelayed: 1 },
+  { id: "E04", name: "Phạm D", role: "Ads Optimizer", systemRole: "EMPLOYEE", department: "Google Ads", email: "phamd@mrex.agency", phone: "0901234570", cccd: "079223344556", address: "321 Võ Văn Kiệt, Q1, TP.HCM", status: "ACTIVE", attendance: "100%", tasksCompleted: 50, tasksDelayed: 0 },
+  { id: "E05", name: "Hoàng E", role: "Creative Director", systemRole: "DIRECTOR", department: "Video", email: "hoange@mrex.agency", phone: "0901234571", cccd: "079334455667", address: "654 Phạm Văn Đồng, Thủ Đức", status: "ACTIVE", attendance: "92%", tasksCompleted: 28, tasksDelayed: 6 },
 ]
 
 const evaluatePerformance = (completed: number, delayed: number) => {
@@ -31,6 +31,8 @@ function EmployeeModal({ isOpen, onClose, onSave, empToEdit }: { isOpen: boolean
   const [department, setDepartment] = useState(empToEdit?.department || "")
   const [email, setEmail] = useState(empToEdit?.email || "")
   const [phone, setPhone] = useState(empToEdit?.phone || "")
+  const [cccd, setCccd] = useState(empToEdit?.cccd || "")
+  const [address, setAddress] = useState(empToEdit?.address || "")
   const [status, setStatus] = useState(empToEdit?.status || "ACTIVE")
   const [systemRole, setSystemRole] = useState(empToEdit?.systemRole || "EMPLOYEE")
 
@@ -42,7 +44,7 @@ function EmployeeModal({ isOpen, onClose, onSave, empToEdit }: { isOpen: boolean
     onSave({
       id: empToEdit?.id || `E${String(Date.now()).slice(-3)}`,
       name: name.trim(), role: role.trim(), department: department.trim(),
-      systemRole,
+      systemRole, cccd: cccd.trim(), address: address.trim(),
       email: email.trim(), phone: phone.trim(), status,
       attendance: empToEdit?.attendance || "100%",
       tasksCompleted: empToEdit?.tasksCompleted || 0,
@@ -74,12 +76,22 @@ function EmployeeModal({ isOpen, onClose, onSave, empToEdit }: { isOpen: boolean
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="a@mrex.agency" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <label className="text-sm font-medium">Email (Tài khoản) *</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="a@mrex.agency" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Số điện thoại</label>
               <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0901234567" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Số CCCD / CMND</label>
+              <input type="text" value={cccd} onChange={e => setCccd(e.target.value)} placeholder="079..." className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Địa chỉ thường trú</label>
+              <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="Số nhà, đường, phường, quận..." className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -99,6 +111,14 @@ function EmployeeModal({ isOpen, onClose, onSave, empToEdit }: { isOpen: boolean
               </select>
             </div>
           </div>
+          {!empToEdit && (
+            <div className="bg-primary/5 text-primary border border-primary/20 rounded-lg p-3 text-sm flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong>Lưu ý:</strong> Khi thêm nhân viên, hệ thống sẽ tự động tạo tài khoản đăng nhập dựa trên <strong>Email</strong> và cấp quyền truy cập vào hệ thống với mật khẩu mặc định là <code>Mrex@2026</code>.
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">Hủy</button>
             <button type="submit" className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
@@ -160,8 +180,8 @@ export default function HRPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-3xl font-bold tracking-tight">Quản lý Nhân sự (HR)</h1>
-          <p className="text-muted-foreground mt-1">Danh sách nhân viên, chấm công và phòng ban.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Quản lý Nhân sự & Hệ thống</h1>
+          <p className="text-muted-foreground mt-1">Danh sách nhân viên, thông tin tài khoản và chấm công.</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <button onClick={() => { setEmpToEdit(null); setShowModal(true) }}

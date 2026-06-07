@@ -39,8 +39,7 @@ const routes = [
   { icon: Clock, label: "HR", href: "/hr", tKey: "hr" },
   { icon: FileText, label: "Approvals", href: "/approvals", tKey: "approvals" },
   { icon: Building2, label: "Company", href: "/company", tKey: "company" },
-  { icon: Settings, label: "Settings", href: "/settings", tKey: "settings" },
-  { icon: ShieldAlert, label: "Admin Panel", href: "/admin", tKey: "admin" }
+  { icon: Settings, label: "Settings", href: "/settings", tKey: "settings" }
 ]
 
 export function AppSidebar() {
@@ -70,9 +69,6 @@ export function AppSidebar() {
       if (route.href === "/workspace" || route.href === "/tasks" || route.href === "/reports" || route.href === "/attendance") return false;
       return true;
     }
-    
-    // Non-directors cannot see the admin panel
-    if (route.href === "/admin") return false;
     
     // Non-directors cannot see the executive dashboard
     if (route.href === "/") return false;
