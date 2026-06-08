@@ -6,15 +6,18 @@ import { toast } from "sonner"
 import { User, Lock, Bell, Globe, Save } from "lucide-react"
 import { useTheme } from "next-themes"
 import { hexToHSL } from "@/lib/utils"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 type SettingsTab = "profile" | "security" | "notifications" | "appearance"
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile")
 
+  const { locale, setLocale } = useTranslation()
+
   // Form states
-  const [name, setName] = useState("Toby Vu")
-  const [phone, setPhone] = useState("0901234567")
+  const [name, setName] = useState("")
+  const [phone, setPhone] = useState("")
   const [oldPassword, setOldPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -37,6 +40,32 @@ export default function SettingsPage() {
     if (storedColor) setBrandColor(storedColor)
     const storedLogo = localStorage.getItem("mrex_brand_logo")
     if (storedLogo) setBrandLogo(storedLogo)
+
+    // Bug #9: Load profile from DB
+    fetch('/api/db?collection=user_profile', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          if (data.name) setName(data.name)
+          if (data.phone) setPhone(data.phone)
+        } else {
+          setName("Toby Vu")
+          setPhone("0901234567")
+        }
+      })
+      .catch(() => { setName("Toby Vu"); setPhone("0901234567") })
+
+    // Bug #11: Load notification settings from DB
+    fetch('/api/db?collection=notification_settings', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          if (typeof data.emailNotif === 'boolean') setEmailNotif(data.emailNotif)
+          if (typeof data.taskNotif === 'boolean') setTaskNotif(data.taskNotif)
+          if (typeof data.reportNotif === 'boolean') setReportNotif(data.reportNotif)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const handleSaveAppearance = () => {
@@ -57,28 +86,72 @@ export default function SettingsPage() {
     }
   }
 
-  const handleSaveProfile = () => {
-    toast.success("Đã lưu thông tin cá nhân thành công!")
+  const handleSaveProfile = async () => {
+    try {
+      await fetch('/api/db?collection=user_profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone }),
+        cache: 'no-store'
+      })
+      toast.success("Đã lưu thông tin cá nhân thành công!")
+    } catch (e) {
+      toast.error("Không thể lưu thông tin!")
+    }
   }
 
-  const handleSaveSecurity = (e: React.FormEvent) => {
+  const handleSaveSecurity = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!oldPassword || !newPassword || !confirmPassword) {
       toast.error("Vui lòng nhập đầy đủ các trường mật khẩu!")
+      return
+    }
+    if (newPassword.length < 6) {
+      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự!")
       return
     }
     if (newPassword !== confirmPassword) {
       toast.error("Mật khẩu xác nhận không khớp!")
       return
     }
-    toast.success("Đã thay đổi mật khẩu tài khoản thành công!")
-    setOldPassword("")
-    setNewPassword("")
-    setConfirmPassword("")
+    try {
+      // Verify old password against stored one
+      const res = await fetch('/api/db?collection=user_password', { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        if (data && data.password && data.password !== oldPassword) {
+          toast.error("Mật khẩu cũ không đúng!")
+          return
+        }
+      }
+      // Save new password
+      await fetch('/api/db?collection=user_password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+        cache: 'no-store'
+      })
+      toast.success("Đã thay đổi mật khẩu tài khoản thành công!")
+      setOldPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } catch (err) {
+      toast.error("Không thể đổi mật khẩu! Vui lòng thử lại.")
+    }
   }
 
-  const handleSaveNotifications = () => {
-    toast.success("Đã cập nhật tùy chọn nhận thông báo!")
+  const handleSaveNotifications = async () => {
+    try {
+      await fetch('/api/db?collection=notification_settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailNotif, taskNotif, reportNotif }),
+        cache: 'no-store'
+      })
+      toast.success("Đã cập nhật tùy chọn nhận thông báo!")
+    } catch (e) {
+      toast.error("Không thể lưu cấu hình thông báo!")
+    }
   }
 
   return (
@@ -351,7 +424,14 @@ export default function SettingsPage() {
                     <h4 className="font-semibold text-sm">Ngôn ngữ mặc định</h4>
                     <p className="text-xs text-muted-foreground mt-0.5">Ngôn ngữ hệ thống hiển thị (Bạn cũng có thể thay đổi nhanh tại header).</p>
                   </div>
-                  <select className="bg-muted border rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20">
+                  <select 
+                    value={locale}
+                    onChange={(e) => {
+                      setLocale(e.target.value as "vi" | "en")
+                      toast.success(`Đã chuyển ngôn ngữ sang ${e.target.value === 'en' ? 'English' : 'Tiếng Việt'}!`)
+                    }}
+                    className="bg-muted border rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
                     <option value="vi">Tiếng Việt (VI)</option>
                     <option value="en">English (EN)</option>
                   </select>

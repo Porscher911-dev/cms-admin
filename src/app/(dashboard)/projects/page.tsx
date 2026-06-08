@@ -123,16 +123,17 @@ interface ProjectModalProps {
   onClose: () => void
   onSave: (project: any) => void
   projectToEdit?: any
+  employees: any[]
 }
 
-function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalProps) {
+function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: ProjectModalProps) {
   const [name, setName] = useState("")
   const [client, setClient] = useState("")
   const [type, setType] = useState("SEO")
   const [status, setStatus] = useState("PLANNING")
   const [progress, setProgress] = useState(0)
   const [dueDate, setDueDate] = useState("")
-  const [teamInput, setTeamInput] = useState("")
+  const [teamInput, setTeamInput] = useState<string[]>([])
 
   useEffect(() => {
     if (projectToEdit) {
@@ -150,7 +151,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
         setDueDate(projectToEdit.dueDate)
       }
       
-      setTeamInput(projectToEdit.team.join(", "))
+      setTeamInput(projectToEdit.team || [])
     } else {
       setName("")
       setClient("")
@@ -158,7 +159,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
       setStatus("PLANNING")
       setProgress(0)
       setDueDate("")
-      setTeamInput("")
+      setTeamInput([])
     }
   }, [projectToEdit, isOpen])
 
@@ -179,9 +180,6 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
     }
 
     const team = teamInput
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0)
 
     onSave({
       id: projectToEdit?.id || `P-${crypto.randomUUID()}`,
@@ -295,15 +293,31 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Thành viên tham gia (cách nhau bằng dấu phẩy)</label>
-            <input
-              type="text"
-              value={teamInput}
-              onChange={(e) => setTeamInput(e.target.value)}
-              placeholder="VD: Alice, Bob, Charlie"
-              className="w-full px-3 py-2 border border-border/80 rounded-lg bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-muted-foreground uppercase">Thành viên tham gia</label>
+            <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border border-border/80 rounded-lg bg-card">
+              {employees.length === 0 ? (
+                <div className="col-span-2 text-xs text-muted-foreground text-center py-2">Đang tải danh sách nhân viên...</div>
+              ) : (
+                employees.map(emp => (
+                  <label key={emp.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={teamInput.includes(emp.name)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setTeamInput([...teamInput, emp.name])
+                        } else {
+                          setTeamInput(teamInput.filter(n => n !== emp.name))
+                        }
+                      }}
+                      className="rounded border-border/80 text-primary focus:ring-primary/20"
+                    />
+                    <span>{emp.name}</span>
+                  </label>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-border/60">
@@ -337,6 +351,7 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [typeFilter, setTypeFilter] = useState("ALL")
   const [projectToDeleteId, setProjectToDeleteId] = useState<string | null>(null)
+  const [employees, setEmployees] = useState<any[]>([])
   const { role } = useRole()
 
   const statuses = [
@@ -349,7 +364,15 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     setMounted(true)
-    const loadProjects = async () => {
+    const loadData = async () => {
+      try {
+        const resEmp = await fetch('/api/db?collection=employees', { cache: 'no-store' })
+        if (resEmp.ok) {
+          const empData = await resEmp.json()
+          if (empData) setEmployees(empData)
+        }
+      } catch (e) {}
+
       try {
         const res = await fetch('/api/db?collection=projects', { cache: 'no-store' })
         if (res.ok) {
@@ -368,7 +391,7 @@ export default function ProjectsPage() {
         setProjects(initialProjects)
       }
     }
-    loadProjects()
+    loadData()
   }, [])
 
   useEffect(() => {
@@ -608,6 +631,7 @@ export default function ProjectsPage() {
           }}
           onSave={handleSaveProject}
           projectToEdit={projectToEdit}
+          employees={employees}
         />
       )}
 

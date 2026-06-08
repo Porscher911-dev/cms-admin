@@ -283,7 +283,7 @@ export default function ApprovalsPage() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {req.status === 'PENDING' ? (
-                        canApprove ? (
+                        canApprove && (role === "DIRECTOR" || req.user !== currentUser) ? (
                           <>
                             <button onClick={() => handleApprove(req.id)}
                               className="p-1.5 text-emerald-600 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 rounded-lg transition-colors" title="Phê duyệt">
@@ -295,7 +295,9 @@ export default function ApprovalsPage() {
                             </button>
                           </>
                         ) : (
-                          <span className="text-muted-foreground text-xs italic">Không có quyền duyệt</span>
+                          <span className="text-muted-foreground text-xs italic">
+                            {req.user === currentUser ? "Chờ cấp trên duyệt" : "Không có quyền duyệt"}
+                          </span>
                         )
                       ) : (
                         <span className="text-muted-foreground text-xs italic">Đã xử lý</span>

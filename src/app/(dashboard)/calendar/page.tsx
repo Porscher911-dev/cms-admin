@@ -189,6 +189,14 @@ function CreateEventModal({
       toast.error("Vui lòng nhập tiêu đề sự kiện!")
       return
     }
+    // Bug #6: Prevent creating events in the past
+    const now = new Date()
+    const eventDate = new Date(currentYear, currentMonth, date)
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    if (eventDate < todayMidnight) {
+      toast.error("Không thể tạo sự kiện ở ngày đã qua!")
+      return
+    }
     const event: CalendarEvent = {
       id: `E${Date.now()}`,
       title: title.trim(),
@@ -540,7 +548,20 @@ function EventChip({ event, onClick }: { event: CalendarEvent; onClick: () => vo
 /* ─────────────── Main Calendar Page ─────────────── */
 export default function CalendarPage() {
   const { role } = useRole()
-  const today = new Date()
+  // Bug #7: Make 'today' reactive so it updates when date changes
+  const [today, setToday] = useState(new Date())
+  useEffect(() => {
+    const checkDateChange = setInterval(() => {
+      const now = new Date()
+      setToday(prev => {
+        if (prev.getDate() !== now.getDate() || prev.getMonth() !== now.getMonth() || prev.getFullYear() !== now.getFullYear()) {
+          return now
+        }
+        return prev
+      })
+    }, 30000) // check every 30 seconds
+    return () => clearInterval(checkDateChange)
+  }, [])
   const [currentMonth, setCurrentMonth] = useState(today.getMonth())
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents)
@@ -599,16 +620,16 @@ export default function CalendarPage() {
   }
 
   // Filter events based on visibility and role
+  // Bug #5: "self" events should ONLY be visible to the creator, not even Director
   const getVisibleEvents = (day: number, month: number) => {
     return events.filter(e => {
       if (e.date !== day || e.month !== month) return false
+      // "self" events are strictly private - only the creator can see them
+      if (e.visibility === "self") {
+        return e.createdByRole === role
+      }
       // "all" events are visible to everyone
-      if (e.visibility === "all") return true
-      // "self" events are visible only to the creator (same role in demo)
-      if (e.visibility === "self" && e.createdByRole === role) return true
-      // Directors can see all events
-      if (role === "DIRECTOR") return true
-      return false
+      return true
     })
   }
 
@@ -750,7 +771,7 @@ export default function CalendarPage() {
         <div className="space-y-3">
           {events
             .filter(e => {
-              if (e.visibility === "self" && e.createdByRole !== role && role !== "DIRECTOR") return false
+              if (e.visibility === "self" && e.createdByRole !== role) return false
               const evtDate = new Date(e.year, e.month, e.date)
               return evtDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate())
             })
@@ -817,7 +838,7 @@ export default function CalendarPage() {
               )
             })}
           {events.filter(e => {
-            if (e.visibility === "self" && e.createdByRole !== role && role !== "DIRECTOR") return false
+              if (e.visibility === "self" && e.createdByRole !== role) return false
             const evtDate = new Date(e.year, e.month, e.date)
             return evtDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate())
           }).length === 0 && (

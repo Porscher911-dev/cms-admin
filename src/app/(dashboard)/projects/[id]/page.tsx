@@ -616,15 +616,21 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
 
               <div className="space-y-1.5">
                 <span className="text-muted-foreground block">Trạng thái</span>
-                <select
-                  value={task.status}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  className="w-full border border-border/80 rounded p-1.5 bg-card font-semibold"
-                >
-                  <option value="TODO">Cần làm (TODO)</option>
-                  <option value="IN_PROGRESS">Đang thực hiện</option>
-                  <option value="DONE">Hoàn thành (DONE)</option>
-                </select>
+                {canManage || task.assignee === (role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu") ? (
+                  <select
+                    value={task.status}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    className="w-full border border-border/80 rounded p-1.5 bg-card font-semibold"
+                  >
+                    <option value="TODO">Cần làm (TODO)</option>
+                    <option value="IN_PROGRESS">Đang thực hiện</option>
+                    <option value="DONE">Hoàn thành (DONE)</option>
+                  </select>
+                ) : (
+                  <span className="w-full block border border-border/80 rounded p-1.5 bg-muted/50 font-semibold text-muted-foreground">
+                    {task.status === "TODO" ? "Cần làm (TODO)" : task.status === "IN_PROGRESS" ? "Đang thực hiện" : "Hoàn thành (DONE)"}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -652,6 +658,69 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
   )
 }
 
+interface AddTeamMemberModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSave: (selectedMembers: string[]) => void
+  currentTeam: string[]
+  employees: any[]
+}
+
+function AddTeamMemberModal({ isOpen, onClose, onSave, currentTeam, employees }: AddTeamMemberModalProps) {
+  const [selected, setSelected] = useState<string[]>([])
+
+  useEffect(() => {
+    if (isOpen) setSelected(currentTeam || [])
+  }, [isOpen, currentTeam])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-card w-full max-w-md rounded-2xl border border-border/80 shadow-2xl p-6 space-y-4 text-foreground flex flex-col max-h-[80vh]"
+      >
+        <div className="flex items-center justify-between border-b pb-3 border-border/60">
+          <h3 className="text-lg font-bold">Thêm thành viên</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="overflow-y-auto flex-1 p-2 border rounded-lg bg-muted/20">
+          {employees.length === 0 ? (
+            <div className="text-xs text-muted-foreground text-center py-4">Đang tải danh sách nhân viên...</div>
+          ) : (
+            employees.map(emp => (
+              <label key={emp.id} className="flex items-center gap-3 text-sm cursor-pointer hover:bg-muted p-2 rounded transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={selected.includes(emp.name)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelected([...selected, emp.name])
+                    } else {
+                      setSelected(selected.filter(n => n !== emp.name))
+                    }
+                  }}
+                  className="rounded border-border/80 text-primary focus:ring-primary/20 w-4 h-4"
+                />
+                <span className="font-medium">{emp.name}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{emp.role}</span>
+              </label>
+            ))
+          )}
+        </div>
+        <div className="flex justify-end gap-3 pt-3 border-t border-border/60">
+          <button onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-muted font-medium">Hủy</button>
+          <button onClick={() => onSave(selected)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 shadow-md">Lưu thay đổi</button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { role } = useRole()
@@ -662,6 +731,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false)
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false)
   
   // New States for Task Filters & Details
   const [taskSearch, setTaskSearch] = useState("")
@@ -669,6 +739,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [selectedTask, setSelectedTask] = useState<any | null>(null)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null)
+  const [employees, setEmployees] = useState<any[]>([])
 
   const taskFilters = [
     { id: "ALL", label: "Tất cả" },
@@ -680,6 +751,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     setMounted(true)
     const loadData = async () => {
+      try {
+        const resEmp = await fetch('/api/db?collection=employees', { cache: 'no-store' })
+        if (resEmp.ok) {
+          const empData = await resEmp.json()
+          if (empData) setEmployees(empData)
+        }
+      } catch (e) {}
+
       try {
         const res = await fetch('/api/db?collection=projects', { cache: 'no-store' })
         if (res.ok) {
@@ -725,7 +804,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     setIsConfirmDeleteOpen(true)
   }
 
+  const currentUser = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
+  const canManage = role === "MANAGER" || role === "DIRECTOR"
+
   const handleToggleTask = (taskId: string) => {
+    const task = project.tasks.find((t: any) => t.id === taskId)
+    if (!task) return
+
+    if (!canManage && task.assignee !== currentUser) {
+      toast.error("Bạn chỉ có thể cập nhật trạng thái công việc của chính mình!")
+      return
+    }
+
     const updatedTasks = project.tasks.map((t: any) => {
       if (t.id === taskId) {
         return {
@@ -782,20 +872,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     setTaskToDeleteId(taskId)
   }
 
-  const handleAddTeamMember = () => {
-    const name = window.prompt("Nhập tên nhân sự mới:")
-    if (name && name.trim()) {
-      if (project.team.includes(name.trim())) {
-        toast.error("Nhân sự này đã tham gia dự án!")
-        return
-      }
-      const updated = {
-        ...project,
-        team: [...project.team, name.trim()]
-      }
-      updateProject(updated)
-      toast.success(`Đã thêm ${name.trim()} vào dự án!`)
+  const handleAddTeamMemberClick = () => {
+    setIsAddMemberModalOpen(true)
+  }
+
+  const handleSaveTeamMembers = (selectedMembers: string[]) => {
+    const updated = {
+      ...project,
+      team: selectedMembers
     }
+    updateProject(updated)
+    toast.success("Đã cập nhật danh sách thành viên!")
+    setIsAddMemberModalOpen(false)
   }
 
   const handleRemoveTeamMember = (name: string) => {
@@ -808,8 +896,6 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       toast.success(`Đã xóa ${name} khỏi dự án!`)
     }
   }
-
-  const canManage = role === "MANAGER" || role === "DIRECTOR"
 
   if (mounted && !project) {
     return (
@@ -1049,7 +1135,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               <h2 className="text-lg font-bold">Nhân sự tham gia</h2>
               {canManage && (
                 <button 
-                  onClick={handleAddTeamMember} 
+                  onClick={handleAddTeamMemberClick} 
                   className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors"
                   title="Thêm nhân sự"
                 >

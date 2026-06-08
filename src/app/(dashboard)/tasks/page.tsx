@@ -553,7 +553,7 @@ function KanbanColumn({
 export default function TasksPage() {
   const { role } = useRole()
   const [search, setSearch] = useState("")
-  const [kanban, setKanban] = useState<KanbanData>(initialKanbanData)
+  const [kanban, setKanban] = useState<KanbanData>({ todo: [], inProgress: [], review: [], done: [] })
   const [selectedTask, setSelectedTask] = useState<{ task: Task; column: ColumnId } | null>(null)
 
   useEffect(() => {
@@ -562,14 +562,10 @@ export default function TasksPage() {
         const res = await fetch('/api/db?collection=tasks', { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
-          if (data) setKanban(data)
-        } else {
-          await fetch('/api/db?collection=tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(initialKanbanData),
-            cache: 'no-store'
-          })
+          if (data && (data.todo || data.inProgress || data.review || data.done)) {
+            setKanban(data)
+          }
+          // If no data exists, keep the empty default kanban (no pre-populated tasks)
         }
       } catch (e) {}
     }
@@ -673,11 +669,17 @@ export default function TasksPage() {
   const projectProgress = projectTasks.length > 0 ? Math.round((doneTasks.length / projectTasks.length) * 100) : 0
   const projectStatus = projectProgress === 100 ? "Hoàn thành" : projectProgress > 0 ? "Đang thực hiện" : "Lên kế hoạch"
 
-  /* ─── Filter by search ─── */
+  /* ─── Filter by search and role ─── */
+  const currentUser = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
+
   const filterTasks = (tasks: Task[]) => {
-    if (!search.trim()) return tasks
+    let filtered = tasks
+    if (role === "EMPLOYEE") {
+      filtered = filtered.filter(t => t.assignee === currentUser)
+    }
+    if (!search.trim()) return filtered
     const q = search.toLowerCase()
-    return tasks.filter(t =>
+    return filtered.filter(t =>
       t.title.toLowerCase().includes(q) ||
       t.description.toLowerCase().includes(q) ||
       t.project.toLowerCase().includes(q)

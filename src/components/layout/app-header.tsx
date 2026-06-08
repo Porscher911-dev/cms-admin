@@ -191,7 +191,7 @@ export function AppHeader() {
                 ))}
               </div>
               <div className="px-4 py-2.5 border-t text-center">
-                <button onClick={() => toast.info("Đang mở danh sách thông báo...")} className="text-xs text-primary font-semibold hover:underline">Xem tất cả thông báo</button>
+                <button onClick={() => { window.location.href = '/notifications'; setShowNotifications(false); }} className="text-xs text-primary font-semibold hover:underline">Xem tất cả thông báo</button>
               </div>
             </div>
           )}

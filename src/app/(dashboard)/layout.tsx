@@ -36,7 +36,7 @@ export default function DashboardLayout({
       }
     } else if (role === "EMPLOYEE") {
       // Employee has restricted pages
-      const allowedPaths = ["/workspace", "/attendance", "/tasks", "/reports", "/calendar", "/settings", "/projects"]
+      const allowedPaths = ["/workspace", "/attendance", "/tasks", "/reports", "/calendar", "/settings", "/projects", "/company"]
       const isProjectSubpath = pathname.startsWith("/projects/")
       if (!allowedPaths.includes(pathname) && !isProjectSubpath) {
         router.push("/workspace")

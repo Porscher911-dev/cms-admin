@@ -114,6 +114,7 @@ export default function Dashboard() {
   
   const [projects, setProjects] = useState<any[]>([])
   const [mounted, setMounted] = useState(false)
+  const [timeFilter, setTimeFilter] = useState("30_days")
 
   useEffect(() => {
     setMounted(true)
@@ -182,15 +183,49 @@ export default function Dashboard() {
     (p.tasks || []).map((t: any) => ({ ...t, projectId: p.id, projectName: p.name }))
   ).filter(t => t.assignee === employeeName)
 
-  const revenueData = [
-    { name: t("dashboard.month_1"), revenue: 40000000, profit: 24000000 },
-    { name: t("dashboard.month_2"), revenue: 30000000, profit: 13980000 },
-    { name: t("dashboard.month_3"), revenue: 20000000, profit: 9800000 },
-    { name: t("dashboard.month_4"), revenue: 27800000, profit: 13908000 },
-    { name: t("dashboard.month_5"), revenue: 48900000, profit: 24800000 },
-    { name: t("dashboard.month_6"), revenue: 53900000, profit: 28800000 },
-    { name: t("dashboard.month_7"), revenue: 64900000, profit: 34300000 },
-  ]
+  const mockDataSets = {
+    "30_days": {
+      stats: { rev: "1.2 Tỷ VNĐ", revChange: "+14.5%", clients: "45", clientsChange: "+2", proj: "12", projChange: "-1", profit: "452 Tr VNĐ", profitChange: "+21.2%" },
+      chart: [
+        { name: t("dashboard.month_1"), revenue: 40000000, profit: 24000000 },
+        { name: t("dashboard.month_2"), revenue: 30000000, profit: 13980000 },
+        { name: t("dashboard.month_3"), revenue: 20000000, profit: 9800000 },
+        { name: t("dashboard.month_4"), revenue: 27800000, profit: 13908000 },
+        { name: t("dashboard.month_5"), revenue: 48900000, profit: 24800000 },
+        { name: t("dashboard.month_6"), revenue: 53900000, profit: 28800000 },
+        { name: t("dashboard.month_7"), revenue: 64900000, profit: 34300000 },
+      ]
+    },
+    "this_month": {
+      stats: { rev: "400 Tr VNĐ", revChange: "+5.2%", clients: "40", clientsChange: "+5", proj: "15", projChange: "+3", profit: "150 Tr VNĐ", profitChange: "+8.1%" },
+      chart: [
+        { name: "Tuần 1", revenue: 80000000, profit: 30000000 },
+        { name: "Tuần 2", revenue: 120000000, profit: 45000000 },
+        { name: "Tuần 3", revenue: 90000000, profit: 35000000 },
+        { name: "Tuần 4", revenue: 110000000, profit: 40000000 },
+      ]
+    },
+    "this_quarter": {
+      stats: { rev: "3.5 Tỷ VNĐ", revChange: "+22.4%", clients: "52", clientsChange: "+12", proj: "24", projChange: "+8", profit: "1.2 Tỷ VNĐ", profitChange: "+30.5%" },
+      chart: [
+        { name: "Tháng 1", revenue: 1000000000, profit: 350000000 },
+        { name: "Tháng 2", revenue: 1200000000, profit: 400000000 },
+        { name: "Tháng 3", revenue: 1300000000, profit: 450000000 },
+      ]
+    },
+    "this_year": {
+      stats: { rev: "14.2 Tỷ VNĐ", revChange: "+45.1%", clients: "85", clientsChange: "+30", proj: "65", projChange: "+20", profit: "5.1 Tỷ VNĐ", profitChange: "+52.3%" },
+      chart: [
+        { name: "Q1", revenue: 3500000000, profit: 1200000000 },
+        { name: "Q2", revenue: 4200000000, profit: 1500000000 },
+        { name: "Q3", revenue: 3800000000, profit: 1300000000 },
+        { name: "Q4", revenue: 2700000000, profit: 1100000000 },
+      ]
+    }
+  }
+
+  const currentData = mockDataSets[timeFilter as keyof typeof mockDataSets] || mockDataSets["30_days"]
+  const revenueData = currentData.chart
 
   return (
     <div className="space-y-6 pb-10">
@@ -209,11 +244,15 @@ export default function Dashboard() {
           transition={{ duration: 0.5 }}
           className="flex items-center gap-2"
         >
-          <select className="bg-card border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
-            <option>{t("dashboard.filter_30_days")}</option>
-            <option>{t("dashboard.filter_this_month")}</option>
-            <option>{t("dashboard.filter_this_quarter")}</option>
-            <option>{t("dashboard.filter_this_year")}</option>
+          <select 
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+            className="bg-card border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="30_days">{t("dashboard.filter_30_days")}</option>
+            <option value="this_month">{t("dashboard.filter_this_month")}</option>
+            <option value="this_quarter">{t("dashboard.filter_this_quarter")}</option>
+            <option value="this_year">{t("dashboard.filter_this_year")}</option>
           </select>
           <button 
             onClick={() => toast.info("Đang tải báo cáo xuống dạng PDF...")}
@@ -377,29 +416,29 @@ export default function Dashboard() {
         >
           <StatCard 
             title={t("dashboard.total_revenue") || "Tổng doanh thu"} 
-            value="1.2 Tỷ VNĐ" 
-            change="+14.5%" 
+            value={currentData.stats.rev} 
+            change={currentData.stats.revChange} 
             trend="up" 
             icon={DollarSign} 
           />
           <StatCard 
             title={t("dashboard.active_clients") || "Khách hàng active"} 
-            value="45" 
-            change="+2" 
+            value={currentData.stats.clients} 
+            change={currentData.stats.clientsChange} 
             trend="up" 
             icon={Users} 
           />
           <StatCard 
             title={t("dashboard.active_projects") || "Dự án đang chạy"} 
-            value="12" 
-            change="-1" 
-            trend="down" 
+            value={currentData.stats.proj} 
+            change={currentData.stats.projChange} 
+            trend={currentData.stats.projChange.startsWith("-") ? "down" : "up"} 
             icon={Briefcase} 
           />
           <StatCard 
             title={t("dashboard.net_profit") || "Lợi nhuận ròng"} 
-            value="452 Tr VNĐ" 
-            change="+21.2%" 
+            value={currentData.stats.profit} 
+            change={currentData.stats.profitChange} 
             trend="up" 
             icon={TrendingUp} 
           />

@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
-import { CalendarCheck2, Clock, LogOut, CheckCircle2, CalendarDays, FilePlus2, X, Send, MapPin, Globe, Wifi } from "lucide-react"
+import { CalendarCheck2, Clock, LogOut, CheckCircle2, CalendarDays, FilePlus2, X, Send, MapPin, Globe, Wifi, Trash2 } from "lucide-react"
+import { useRole } from "@/components/providers/role-provider"
 
 interface AttendanceLog {
   id: string
@@ -15,6 +16,9 @@ interface AttendanceLog {
 }
 
 export default function AttendancePage() {
+  const { role } = useRole()
+  const currentUser = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
+
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isCheckedIn, setIsCheckedIn] = useState(false)
   const [checkInTime, setCheckInTime] = useState<string | null>(null)
@@ -94,26 +98,8 @@ export default function AttendancePage() {
               }
             }
           } else {
-             // defaults
-             const defaultLogs: AttendanceLog[] = [
-              {
-                id: "log-1",
-                type: "CHECK_IN",
-                timestamp: new Date(new Date().setHours(8, 30, 0)),
-                ip: "113.161.79.120",
-                location: "10.7769° N, 106.7009° E (Quận 1, TP.HCM)",
-                isp: "Viettel Telecom"
-              },
-              {
-                id: "log-2",
-                type: "CHECK_OUT",
-                timestamp: new Date(new Date().setHours(12, 0, 0)),
-                ip: "113.161.79.120",
-                location: "10.7769° N, 106.7009° E (Quận 1, TP.HCM)",
-                isp: "Viettel Telecom"
-              }
-            ]
-            setLogs(defaultLogs)
+             // No data yet — start with empty logs (new employee)
+             setLogs([])
           }
         }
       } catch (e) {}
@@ -127,17 +113,7 @@ export default function AttendancePage() {
           if (data) {
             setLeaveRequests(data)
           } else {
-            const defaultRequests = [
-              { id: "REQ-001", date: "15/06/2026 - 16/06/2026", type: "Nghỉ phép năm", status: "PENDING", reason: "Đi khám sức khỏe định kỳ", user: "Toby Vu" },
-              { id: "REQ-002", date: "02/05/2026 - 02/05/2026", type: "Nghỉ ốm", status: "APPROVED", reason: "Sốt siêu vi", user: "Toby Vu" },
-            ]
-            setLeaveRequests(defaultRequests)
-            fetch('/api/db?collection=leave_requests', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(defaultRequests),
-              cache: 'no-store'
-            }).catch(() => {})
+            setLeaveRequests([])
           }
         }
       } catch (e) {}
@@ -278,7 +254,7 @@ export default function AttendancePage() {
       type: leaveType,
       reason: leaveReason,
       status: "PENDING",
-      user: "Toby Vu"
+      user: currentUser
     }
 
     const updated = [newRequest, ...leaveRequests]
@@ -419,19 +395,6 @@ export default function AttendancePage() {
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-primary/70" /> Định vị:</span>
                 <span className="font-medium truncate max-w-[160px] text-right" title={userLocation}>{userLocation}</span>
-              </div>
-              
-              {/* Reset Debug Button */}
-              <div className="pt-2 flex justify-center border-t border-dashed border-muted-foreground/10">
-                <button 
-                  onClick={() => {
-                    saveAttendanceData([], false, null)
-                    toast.success("Đã đặt lại dữ liệu chấm công (Chế độ Thử nghiệm)!")
-                  }}
-                  className="text-[10px] text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer hover:underline"
-                >
-                  Xóa lịch sử hôm nay (Chế độ Thử nghiệm)
-                </button>
               </div>
             </div>
           )}

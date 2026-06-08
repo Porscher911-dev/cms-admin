@@ -40,8 +40,7 @@ export default function LoginPage() {
         
         // Short delay for UI effect
         setTimeout(() => {
-          router.push('/')
-          router.refresh()
+          window.location.href = '/'
         }, 500)
       } else {
         // Fetch employees from the global database API
@@ -51,17 +50,28 @@ export default function LoginPage() {
           if (res.ok) employees = await res.json()
         } catch (e) {}
 
+        // Fetch custom password if changed in settings
+        let customPassword = null
+        try {
+          const passRes = await fetch('/api/db?collection=user_password', { cache: 'no-store' })
+          if (passRes.ok) {
+            const passData = await passRes.json()
+            if (passData && passData.password) customPassword = passData.password
+          }
+        } catch (e) {}
+
         const foundEmployee = employees.find((e: any) => e.email.toLowerCase() === loginEmail && e.status === 'ACTIVE')
 
-        if (foundEmployee && loginPassword === 'Mrex@2026') {
+        const isValidPassword = customPassword ? loginPassword === customPassword : loginPassword === 'Mrex@2026'
+
+        if (foundEmployee && isValidPassword) {
           const userRole = foundEmployee.systemRole || 'EMPLOYEE'
           document.cookie = `mrex_auth=true; path=/; max-age=86400`
           localStorage.setItem('mrex_demo_role', userRole)
 
           toast.success('Đăng nhập thành công!')
           setTimeout(() => {
-            router.push('/')
-            router.refresh()
+            window.location.href = '/'
           }, 500)
         } else {
           if (employees.length === 0) {
@@ -69,7 +79,7 @@ export default function LoginPage() {
           } else if (!foundEmployee) {
             const allEmails = employees.map((e: any) => e.email).join(', ')
             toast.error(`Không tìm thấy tài khoản: ${loginEmail}. (Các email đang có: ${allEmails})`)
-          } else if (loginPassword !== 'Mrex@2026') {
+          } else if (!isValidPassword) {
             toast.error(`Sai mật khẩu! Bạn đã nhập: ${loginPassword}`)
           } else {
             toast.error('Email hoặc mật khẩu không chính xác!')

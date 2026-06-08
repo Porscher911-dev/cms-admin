@@ -107,6 +107,26 @@ export default function CompanyPortalPage() {
       body: JSON.stringify(newAnns),
       cache: 'no-store'
     }).catch(() => {})
+
+    // Push global notification
+    fetch('/api/db?collection=notifications', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        const notifs = Array.isArray(data) ? data : []
+        const newNotif = {
+          id: Date.now(),
+          text: `[Thông báo mới] ${newAnnouncement.title}`,
+          time: "Vừa xong",
+          read: false
+        }
+        fetch('/api/db?collection=notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([newNotif, ...notifs]),
+          cache: 'no-store'
+        }).catch(() => {})
+      }).catch(() => {})
+
     setShowAddAnnouncement(false)
     setNewAnnouncement({ title: '', content: '', isPinned: false, isUrgent: false })
     toast.success("Đã đăng thông báo mới!")

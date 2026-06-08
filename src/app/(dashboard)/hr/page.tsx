@@ -37,12 +37,16 @@ function EmployeeModal({ isOpen, onClose, onSave, empToEdit }: { isOpen: boolean
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !role.trim()) { toast.error("Vui lòng nhập đầy đủ Họ tên và Vị trí!"); return }
+    if (!email.trim()) { toast.error("Vui lòng nhập Email!"); return }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) { toast.error("Email không hợp lệ!"); return }
+    if (phone.trim() && !/^(0|\+84)[0-9]{8,10}$/.test(phone.trim())) { toast.error("Số điện thoại không hợp lệ! (VD: 0901234567)"); return }
     onSave({
       id: empToEdit?.id || `E${String(Date.now()).slice(-3)}`,
       name: name.trim(), role: role.trim(), department: department.trim(),
       systemRole, cccd: cccd.trim(), address: address.trim(),
       email: email.trim(), phone: phone.trim(), status,
-      attendance: empToEdit?.attendance || "100%",
+      attendance: empToEdit?.attendance || "0%",
       tasksCompleted: empToEdit?.tasksCompleted || 0,
       tasksDelayed: empToEdit?.tasksDelayed || 0,
     })

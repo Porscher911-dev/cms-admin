@@ -6,34 +6,40 @@ import { toast } from "sonner"
 import { ClipboardList, Send, FileText, CheckCircle2, History, Search, Heart, MessageSquare, Clock, Trash2 } from "lucide-react"
 import { useRole } from "@/components/providers/role-provider"
 
-// Mock Data Unified
-const initialReports = [
-  { id: "M1", sender: "Toby Vu", role: "Design", time: "17:30 Hôm nay", content: "Em đã bàn giao toàn bộ file thiết kế cho team Dev. Ngày mai em xin phép work from home buổi sáng ạ.", liked: false, status: "Chờ duyệt" },
-  { id: "M2", sender: "Alice Smith", role: "Marketing", time: "16:45 Hôm nay", content: "Chiến dịch quảng cáo Facebook đã chạy, CPA đang rất tốt. Mai sẽ tối ưu thêm tệp Lookalike.", liked: true, status: "Đã duyệt" },
-  { id: "M3", sender: "Bob Johnson", role: "SEO", time: "Hôm qua", content: "Đã đi xong 50 backlink đợt 1. Thứ hạng từ khóa trang chủ đã lên Top 5.", liked: true, status: "Đã duyệt" },
-]
+// No hardcoded reports - start empty, load from DB
+const initialReports: any[] = []
 
 export default function ReportsPage() {
   const { role } = useRole()
   const [reportText, setReportText] = useState("")
-  const [reports, setReports] = useState(initialReports)
+  const [reports, setReports] = useState<any[]>([])
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    const saved = localStorage.getItem("mrex_reports")
-    if (saved) {
+    const loadReports = async () => {
       try {
-        setReports(JSON.parse(saved))
+        const res = await fetch('/api/db?collection=reports', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data && Array.isArray(data) && data.length > 0) {
+            setReports(data)
+          }
+          // If no data, keep empty — new employees have no reports
+        }
       } catch (e) {}
     }
+    loadReports()
   }, [])
 
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("mrex_reports", JSON.stringify(reports))
-    }
-  }, [reports, mounted])
+  const saveReportsToDb = (updated: any[]) => {
+    fetch('/api/db?collection=reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+      cache: 'no-store'
+    }).catch(() => {})
+  }
 
   const handleSendReport = () => {
     if (!reportText.trim()) {
@@ -51,28 +57,42 @@ export default function ReportsPage() {
       status: "Chờ duyệt"
     }
     
-    setReports([newReport, ...reports])
+    const updated = [newReport, ...reports]
+    setReports(updated)
+    saveReportsToDb(updated)
     toast.success("Đã gửi báo cáo thành công!")
     setReportText("")
   }
 
   const handleDelete = (id: string, sender: string) => {
-    setReports(prev => prev.filter(item => item.id !== id))
+    const updated = reports.filter(item => item.id !== id)
+    setReports(updated)
+    saveReportsToDb(updated)
     toast.success(`Đã xóa báo cáo của ${sender}!`)
   }
 
   const toggleLike = (id: string, sender: string, currentlyLiked: boolean) => {
-    setReports(prev => prev.map(item => item.id === id ? { ...item, liked: !item.liked, status: !item.liked ? "Đã duyệt" : "Chờ duyệt" } : item))
+    const updated = reports.map(item => item.id === id ? { ...item, liked: !item.liked, status: !item.liked ? "Đã duyệt" : "Chờ duyệt" } : item)
+    setReports(updated)
+    saveReportsToDb(updated)
     if (!currentlyLiked) {
       toast.success(`Đã duyệt báo cáo của ${sender}!`)
     }
   }
 
-  const handleReply = (id: string, sender: string) => {
-    const reply = window.prompt(`Nhập nội dung phản hồi cho báo cáo của ${sender}:`)
-    if (reply && reply.trim() !== "") {
-      setReports(prev => prev.map(item => item.id === id ? { ...item, status: "Đã phản hồi" } : item))
+  const [activeReplyId, setActiveReplyId] = useState<string | null>(null)
+  const [replyText, setReplyText] = useState("")
+
+  const submitReply = (id: string, sender: string) => {
+    if (replyText.trim() !== "") {
+      const updated = reports.map(item => item.id === id ? { ...item, status: "Đã phản hồi", managerReply: replyText.trim(), repliedAt: new Date().toLocaleString('vi-VN') } : item)
+      setReports(updated)
+      saveReportsToDb(updated)
       toast.success(`Đã gửi phản hồi đến ${sender} thành công!`)
+      setActiveReplyId(null)
+      setReplyText("")
+    } else {
+      toast.error("Vui lòng nhập nội dung phản hồi!")
     }
   }
 
@@ -141,6 +161,16 @@ export default function ReportsPage() {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-2">{report.content}</p>
+                      {report.managerReply && (
+                        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center gap-1 mb-1">
+                            <MessageSquare className="w-3 h-3 text-blue-600" />
+                            <span className="text-[10px] font-bold text-blue-600">Nhận xét Quản lý</span>
+                            {report.repliedAt && <span className="text-[9px] text-muted-foreground ml-auto">{report.repliedAt}</span>}
+                          </div>
+                          <p className="text-xs text-blue-700 dark:text-blue-300">{report.managerReply}</p>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -201,10 +231,19 @@ export default function ReportsPage() {
                 <div className="flex-1 bg-muted/30 p-4 rounded-xl text-sm text-foreground/80 mb-4 whitespace-pre-wrap">
                   {msg.content}
                 </div>
+                
+                {msg.managerReply && (
+                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 text-xs">
+                    <div className="flex items-center gap-1 mb-1 font-bold text-blue-600">
+                      <MessageSquare className="w-3 h-3" /> Quản lý đã phản hồi
+                    </div>
+                    <p className="text-blue-700 dark:text-blue-300">{msg.managerReply}</p>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between pt-3 border-t">
                   <div className="flex items-center gap-4">
-                    <button onClick={() => handleReply(msg.id, msg.sender)} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
+                    <button onClick={() => { setActiveReplyId(activeReplyId === msg.id ? null : msg.id); setReplyText(""); }} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors">
                       <MessageSquare className="w-4 h-4" /> Phản hồi
                     </button>
                     <button onClick={() => handleDelete(msg.id, msg.sender)} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-destructive transition-colors">
@@ -218,6 +257,23 @@ export default function ReportsPage() {
                     <Heart className={`w-4 h-4 ${msg.liked ? 'fill-current' : ''}`} /> {msg.liked ? 'Đã duyệt' : 'Duyệt'}
                   </button>
                 </div>
+
+                {activeReplyId === msg.id && (
+                  <div className="pt-3 border-t flex flex-col gap-2 mt-3 animate-in fade-in slide-in-from-top-2">
+                    <textarea 
+                      autoFocus
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      placeholder="Nhập nội dung phản hồi..."
+                      className="w-full text-xs p-2 border rounded-lg resize-none bg-muted/20 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                      rows={2}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => setActiveReplyId(null)} className="text-xs px-3 py-1.5 border hover:bg-muted rounded-md transition-colors font-medium">Hủy</button>
+                      <button onClick={() => submitReply(msg.id, msg.sender)} className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium">Gửi phản hồi</button>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>
