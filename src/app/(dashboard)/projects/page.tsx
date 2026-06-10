@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRole } from "@/components/providers/role-provider"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 // Enriched Initial Mock Data
 const initialProjects = [
@@ -97,12 +98,12 @@ const initialProjects = [
   },
 ]
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string, t: any) => {
   switch (status) {
-    case "PLANNING": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300"><Clock className="w-3.5 h-3.5" /> Lên kế hoạch</span>
-    case "IN_PROGRESS": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"><FolderKanban className="w-3.5 h-3.5" /> Đang thực hiện</span>
-    case "REVIEW": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400"><AlertCircle className="w-3.5 h-3.5" /> Đang chờ duyệt</span>
-    case "COMPLETED": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"><CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn thành</span>
+    case "PLANNING": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300"><Clock className="w-3.5 h-3.5" /> {t("projects.status_planning")}</span>
+    case "IN_PROGRESS": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"><FolderKanban className="w-3.5 h-3.5" /> {t("projects.status_in_progress")}</span>
+    case "REVIEW": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400"><AlertCircle className="w-3.5 h-3.5" /> {t("projects.status_review")}</span>
+    case "COMPLETED": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"><CheckCircle2 className="w-3.5 h-3.5" /> {t("projects.status_completed")}</span>
     default: return null
   }
 }
@@ -127,6 +128,7 @@ interface ProjectModalProps {
 }
 
 function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: ProjectModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState("")
   const [client, setClient] = useState("")
   const [type, setType] = useState("SEO")
@@ -168,7 +170,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !client.trim()) {
-      toast.error("Vui lòng điền đầy đủ Tên dự án và Khách hàng!")
+      toast.error(t("projects.error_empty_fields"))
       return
     }
 
@@ -203,7 +205,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
       >
         <div className="flex items-center justify-between border-b pb-3 border-border/60">
           <h3 className="text-xl font-bold text-foreground">
-            {projectToEdit ? "Cập nhật Dự án" : "Thêm Dự án mới"}
+            {projectToEdit ? t("projects.edit_project") : t("projects.add_project_new")}
           </h3>
           <button
             onClick={onClose}
@@ -215,24 +217,24 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Tên Dự án</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.project_name")}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="VD: Chiến dịch SEO Tổng thể 2026"
+              placeholder={t("projects.project_name_placeholder")}
               className="w-full px-3 py-2 border border-border/80 rounded-lg bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               required
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Khách hàng (Client)</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.client")}</label>
             <input
               type="text"
               value={client}
               onChange={(e) => setClient(e.target.value)}
-              placeholder="VD: TechCorp Global"
+              placeholder={t("projects.client_placeholder")}
               className="w-full px-3 py-2 border border-border/80 rounded-lg bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               required
             />
@@ -240,7 +242,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Loại dự án</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.project_type")}</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
@@ -255,23 +257,23 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Trạng thái</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.status")}</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-border/80 rounded-lg bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
-                <option value="PLANNING">Lên kế hoạch</option>
-                <option value="IN_PROGRESS">Đang thực hiện</option>
-                <option value="REVIEW">Đang chờ duyệt</option>
-                <option value="COMPLETED">Đã hoàn thành</option>
+                <option value="PLANNING">{t("projects.status_planning")}</option>
+                <option value="IN_PROGRESS">{t("projects.status_in_progress")}</option>
+                <option value="REVIEW">{t("projects.status_review")}</option>
+                <option value="COMPLETED">{t("projects.status_completed")}</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Thời hạn (Due Date)</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.due_date")}</label>
               <input
                 type="date"
                 value={dueDate}
@@ -281,7 +283,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Tiến độ (%)</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.progress")}</label>
               <input
                 type="number"
                 min="0"
@@ -294,10 +296,10 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Thành viên tham gia</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.team_members")}</label>
             <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border border-border/80 rounded-lg bg-card">
               {employees.length === 0 ? (
-                <div className="col-span-2 text-xs text-muted-foreground text-center py-2">Đang tải danh sách nhân viên...</div>
+                <div className="col-span-2 text-xs text-muted-foreground text-center py-2">{t("projects.loading_employees")}</div>
               ) : (
                 employees.map(emp => (
                   <label key={emp.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded transition-colors">
@@ -326,13 +328,13 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
               onClick={onClose}
               className="px-4 py-2 border border-border/80 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
             >
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
             >
-              Lưu lại
+              {t("common.save")}
             </button>
           </div>
         </form>
@@ -342,6 +344,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit, employees }: Pro
 }
 
 export default function ProjectsPage() {
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState("")
   const [projects, setProjects] = useState<any[]>([])
   const [mounted, setMounted] = useState(false)
@@ -355,11 +358,11 @@ export default function ProjectsPage() {
   const { role } = useRole()
 
   const statuses = [
-    { id: "ALL", label: "Tất cả" },
-    { id: "PLANNING", label: "Lên kế hoạch" },
-    { id: "IN_PROGRESS", label: "Đang thực hiện" },
-    { id: "REVIEW", label: "Chờ duyệt" },
-    { id: "COMPLETED", label: "Đã hoàn thành" }
+    { id: "ALL", label: t("common.all") },
+    { id: "PLANNING", label: t("projects.status_planning") },
+    { id: "IN_PROGRESS", label: t("projects.status_in_progress") },
+    { id: "REVIEW", label: t("projects.status_review") },
+    { id: "COMPLETED", label: t("projects.status_completed") }
   ]
 
   useEffect(() => {
@@ -418,11 +421,11 @@ export default function ProjectsPage() {
     if (projectToEdit) {
       // Edit
       setProjects(prev => prev.map(p => p.id === savedProject.id ? savedProject : p))
-      toast.success("Đã cập nhật dự án thành công!")
+      toast.success(t("projects.project_updated"))
     } else {
       // Add
       setProjects(prev => [savedProject, ...prev])
-      toast.success("Đã thêm dự án mới thành công!")
+      toast.success(t("projects.project_added"))
     }
     setIsModalOpen(false)
     setProjectToEdit(null)
@@ -455,8 +458,8 @@ export default function ProjectsPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl font-bold tracking-tight">Quản lý Dự án</h1>
-          <p className="text-muted-foreground mt-1">Theo dõi tiến độ tất cả dự án của các phòng ban.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("projects.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("projects.subtitle")}</p>
         </motion.div>
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
@@ -468,7 +471,7 @@ export default function ProjectsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input 
               type="text" 
-              placeholder="Tìm tên dự án hoặc client..." 
+              placeholder={t("projects.search_placeholder")} 
               className="pl-9 pr-4 py-2 rounded-lg border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all w-[250px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -483,7 +486,7 @@ export default function ProjectsPage() {
               }}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
             >
-              <Plus className="w-4 h-4" /> Thêm Dự án
+              <Plus className="w-4 h-4" /> {t("projects.add_project")}
             </button>
           )}
         </motion.div>
@@ -508,13 +511,13 @@ export default function ProjectsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">Lọc theo loại:</span>
+          <span className="text-xs font-bold text-muted-foreground uppercase whitespace-nowrap">{t("projects.filter_type")}</span>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             className="px-3 py-2 border rounded-lg bg-card text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
-            <option value="ALL">Tất cả loại</option>
+            <option value="ALL">{t("projects.all_types")}</option>
             <option value="SEO">SEO</option>
             <option value="DESIGN">DESIGN</option>
             <option value="VIDEO">VIDEO</option>
@@ -566,7 +569,7 @@ export default function ProjectsPage() {
                                 }}
                                 className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-muted transition-colors"
                               >
-                                <Edit className="w-4.5 h-4.5 text-muted-foreground" /> Chỉnh sửa
+                                <Edit className="w-4.5 h-4.5 text-muted-foreground" /> {t("common.edit")}
                               </button>
                               <button
                                 onClick={(e) => {
@@ -576,7 +579,7 @@ export default function ProjectsPage() {
                                 }}
                                 className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-muted text-destructive hover:bg-destructive/10 transition-colors"
                               >
-                                <Trash2 className="w-4.5 h-4.5" /> Xóa dự án
+                                <Trash2 className="w-4.5 h-4.5" /> {t("projects.delete_project")}
                               </button>
                             </div>
                           )}
@@ -594,7 +597,7 @@ export default function ProjectsPage() {
                     <div className="mt-auto space-y-5">
                       <div>
                         <div className="flex justify-between text-sm mb-2">
-                          <span className="font-medium">Tiến độ</span>
+                          <span className="font-medium">{t("projects.progress_label")}</span>
                           <span className="font-bold text-primary">{displayProgress}%</span>
                         </div>
                         <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -607,7 +610,7 @@ export default function ProjectsPage() {
 
                       <div className="flex items-center justify-between pt-4 border-t border-border/50">
                         <div>
-                          {getStatusBadge(project.status)}
+                          {getStatusBadge(project.status, t)}
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                           <CalendarDays className="w-4 h-4" />
@@ -638,11 +641,11 @@ export default function ProjectsPage() {
       {projectToDeleteId && (
         <ConfirmModal
           isOpen={!!projectToDeleteId}
-          title="Xóa dự án"
-          message="Bạn có chắc chắn muốn xóa dự án này? Hành động này không thể hoàn tác."
+          title={t("projects.delete_title")}
+          message={t("projects.delete_confirm")}
           onConfirm={() => {
             setProjects(prev => prev.filter(p => p.id !== projectToDeleteId))
-            toast.success("Đã xóa dự án thành công!")
+            toast.success(t("projects.project_deleted"))
             setProjectToDeleteId(null)
           }}
           onCancel={() => setProjectToDeleteId(null)}
@@ -661,6 +664,7 @@ interface ConfirmModalProps {
 }
 
 function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: ConfirmModalProps) {
+  const { t } = useTranslation()
   if (!isOpen) return null
 
   return (
@@ -681,14 +685,14 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: ConfirmMo
             onClick={onCancel}
             className="px-4 py-2 border border-border/80 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
           >
-            Hủy
+            {t("common.cancel")}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 transition-colors shadow-lg shadow-destructive/20"
           >
-            Xác nhận
+            {t("common.confirm")}
           </button>
         </div>
       </motion.div>

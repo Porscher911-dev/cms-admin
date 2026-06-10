@@ -15,13 +15,14 @@ import {
   MoreVertical,
   AlertCircle
 } from "lucide-react"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 const initialClients = [
-  { id: "C001", name: "TechCorp Global", contact: "Alice Smith", email: "alice@techcorp.com", phone: "+1 234 567 890", status: "ACTIVE", value: "$45,000", lastActive: "2 giờ trước" },
-  { id: "C002", name: "Innova Design", contact: "Bob Johnson", email: "bob@innova.com", phone: "+1 987 654 321", status: "LEAD", value: "$12,500", lastActive: "1 ngày trước" },
-  { id: "C003", name: "Nexus Solutions", contact: "Charlie Davis", email: "charlie@nexus.com", phone: "+1 456 789 012", status: "NEGOTIATING", value: "$85,000", lastActive: "Vừa xong" },
-  { id: "C004", name: "Alpha Marketing", contact: "Diana Prince", email: "diana@alpha.com", phone: "+1 321 654 098", status: "ACTIVE", value: "$24,000", lastActive: "5 ngày trước" },
-  { id: "C005", name: "Omega Retail", contact: "Evan Wright", email: "evan@omega.com", phone: "+1 654 321 987", status: "INACTIVE", value: "$8,000", lastActive: "2 tháng trước" },
+  { id: "C001", name: "TechCorp Global", contact: "Alice Smith", email: "alice@techcorp.com", phone: "0901 234 567", status: "ACTIVE", value: "1.125.000.000 VNĐ", lastActive: "2 giờ trước" },
+  { id: "C002", name: "Innova Design", contact: "Bob Johnson", email: "bob@innova.com", phone: "0987 654 321", status: "LEAD", value: "312.500.000 VNĐ", lastActive: "1 ngày trước" },
+  { id: "C003", name: "Nexus Solutions", contact: "Charlie Davis", email: "charlie@nexus.com", phone: "0456 789 012", status: "NEGOTIATING", value: "2.125.000.000 VNĐ", lastActive: "Vừa xong" },
+  { id: "C004", name: "Alpha Marketing", contact: "Diana Prince", email: "diana@alpha.com", phone: "0321 654 098", status: "ACTIVE", value: "600.000.000 VNĐ", lastActive: "5 ngày trước" },
+  { id: "C005", name: "Omega Retail", contact: "Evan Wright", email: "evan@omega.com", phone: "0654 321 987", status: "INACTIVE", value: "200.000.000 VNĐ", lastActive: "2 tháng trước" },
 ]
 
 const getStatusColor = (status: string) => {
@@ -39,6 +40,7 @@ const statusLabel = (s: string) => {
 
 // Client Modal
 function ClientModal({ isOpen, onClose, onSave, clientToEdit }: { isOpen: boolean; onClose: () => void; onSave: (c: any) => void; clientToEdit?: any }) {
+  const { t } = useTranslation()
   const [name, setName] = useState(clientToEdit?.name || "")
   const [contact, setContact] = useState(clientToEdit?.contact || "")
   const [email, setEmail] = useState(clientToEdit?.email || "")
@@ -61,7 +63,7 @@ function ClientModal({ isOpen, onClose, onSave, clientToEdit }: { isOpen: boolea
       email: email.trim(),
       phone: phone.trim(),
       status,
-      value: value.trim() || "$0",
+      value: value.trim() || "0 VNĐ",
       lastActive: clientToEdit?.lastActive || "Vừa xong"
     })
   }
@@ -74,38 +76,38 @@ function ClientModal({ isOpen, onClose, onSave, clientToEdit }: { isOpen: boolea
         className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden text-foreground"
       >
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold">{clientToEdit ? "Cập nhật Khách hàng" : "Thêm Khách hàng mới"}</h2>
+          <h2 className="text-xl font-bold">{clientToEdit ? t("clients.edit_client") : t("clients.new_client")}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors">
             <X className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tên công ty / Khách hàng *</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Nhập tên khách hàng" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
+            <label className="text-sm font-medium">{t("clients.client_name")} *</label>
+            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t("clients.name")} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Người liên hệ *</label>
-              <input type="text" value={contact} onChange={e => setContact(e.target.value)} placeholder="Tên người đại diện" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
+              <label className="text-sm font-medium">{t("clients.contact_person")} *</label>
+              <input type="text" value={contact} onChange={e => setContact(e.target.value)} placeholder={t("clients.contact")} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Số điện thoại</label>
+              <label className="text-sm font-medium">{t("clients.phone")}</label>
               <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="090..." className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email liên hệ</label>
+              <label className="text-sm font-medium">{t("clients.email")}</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@company.com" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Giá trị HĐ</label>
-              <input type="text" value={value} onChange={e => setValue(e.target.value)} placeholder="$10,000" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <label className="text-sm font-medium">{t("clients.contract_value")}</label>
+              <input type="text" value={value} onChange={e => setValue(e.target.value)} placeholder={t("clients.contract_value_placeholder")} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Trạng thái</label>
+            <label className="text-sm font-medium">{t("clients.status")}</label>
             <select value={status} onChange={e => setStatus(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
               <option value="LEAD">Lead mới</option>
               <option value="NEGOTIATING">Đang đàm phán</option>
@@ -114,9 +116,9 @@ function ClientModal({ isOpen, onClose, onSave, clientToEdit }: { isOpen: boolea
             </select>
           </div>
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">Hủy bỏ</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">{t("common.cancel")}</button>
             <button type="submit" className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-              {clientToEdit ? "Cập nhật" : "Lưu Khách hàng"}
+              {clientToEdit ? t("common.update") : t("common.save")}
             </button>
           </div>
         </form>
@@ -143,6 +145,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen:
 }
 
 export default function ClientsPage() {
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [clients, setClients] = useState(initialClients)
@@ -201,15 +204,15 @@ export default function ClientsPage() {
     <div className="space-y-6 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-3xl font-bold tracking-tight">Quản lý Khách hàng</h1>
-          <p className="text-muted-foreground mt-1">Danh sách đối tác và khách hàng của Agency.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("clients.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("clients.subtitle")}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="flex items-center gap-3">
           <button 
             onClick={() => { setClientToEdit(null); setShowModal(true) }}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
-            <Plus className="w-4 h-4" /> Thêm Khách hàng
+            <Plus className="w-4 h-4" /> {t("clients.add_client")}
           </button>
         </motion.div>
       </div>
@@ -228,7 +231,7 @@ export default function ClientsPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input 
-              type="text" placeholder="Tìm kiếm theo tên công ty, người liên hệ..." 
+              type="text" placeholder={t("clients.search_placeholder")} 
               className="w-full pl-9 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -239,11 +242,11 @@ export default function ClientsPage() {
           <table className="w-full min-w-[700px] text-sm text-left">
             <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
               <tr>
-                <th className="px-6 py-4 font-semibold">Khách hàng / Công ty</th>
-                <th className="px-6 py-4 font-semibold">Người liên hệ</th>
-                <th className="px-6 py-4 font-semibold">Trạng thái</th>
-                <th className="px-6 py-4 font-semibold">Giá trị HĐ</th>
-                <th className="px-6 py-4 font-semibold text-right">Hành động</th>
+                <th className="px-6 py-4 font-semibold">{t("clients.name")}</th>
+                <th className="px-6 py-4 font-semibold">{t("clients.contact")}</th>
+                <th className="px-6 py-4 font-semibold">{t("clients.status")}</th>
+                <th className="px-6 py-4 font-semibold">{t("clients.value")}</th>
+                <th className="px-6 py-4 font-semibold text-right">{t("common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -262,9 +265,9 @@ export default function ClientsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium">{client.contact}</div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {client.email}</span>
-                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {client.phone}</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1 whitespace-nowrap"><Mail className="w-3 h-3 shrink-0" /> {client.email}</span>
+                      <span className="flex items-center gap-1 whitespace-nowrap"><Phone className="w-3 h-3 shrink-0" /> {client.phone}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -285,11 +288,11 @@ export default function ClientsPage() {
                         <div className="absolute right-0 top-10 w-40 bg-card border rounded-lg shadow-lg py-1 z-20 text-sm text-foreground">
                           <button onClick={() => { setClientToEdit(client); setShowModal(true); setActiveMenuId(null) }}
                             className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-muted transition-colors">
-                            <Edit className="w-4 h-4 text-muted-foreground" /> Chỉnh sửa
+                            <Edit className="w-4 h-4 text-muted-foreground" /> {t("common.edit")}
                           </button>
                           <button onClick={() => { setDeleteId(client.id); setActiveMenuId(null) }}
                             className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-muted text-destructive hover:bg-destructive/10 transition-colors">
-                            <Trash2 className="w-4 h-4" /> Xóa khách hàng
+                            <Trash2 className="w-4 h-4" /> {t("common.delete")}
                           </button>
                         </div>
                       )}
@@ -298,7 +301,7 @@ export default function ClientsPage() {
                 </motion.tr>
               ))}
               {filteredClients.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">Không tìm thấy khách hàng nào.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">{t("clients.no_clients")}</td></tr>
               )}
             </tbody>
           </table>

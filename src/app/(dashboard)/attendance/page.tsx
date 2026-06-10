@@ -3,8 +3,12 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
-import { CalendarCheck2, Clock, LogOut, CheckCircle2, CalendarDays, FilePlus2, X, Send, MapPin, Globe, Wifi, Trash2 } from "lucide-react"
+import { CalendarCheck2, Clock, LogOut, CheckCircle2, CalendarDays, FilePlus2, X, Send, MapPin, Globe, Wifi, Trash2, Users, Download } from "lucide-react"
+import * as XLSX from "xlsx"
+import jsPDF from "jspdf"
+import "jspdf-autotable"
 import { useRole } from "@/components/providers/role-provider"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 interface AttendanceLog {
   id: string
@@ -16,13 +20,15 @@ interface AttendanceLog {
 }
 
 export default function AttendancePage() {
-  const { role } = useRole()
-  const currentUser = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
+  const { t } = useTranslation()
+  const { role, userProfile, attendanceState, setAttendanceState } = useRole()
+  const currentUser = userProfile?.name || "Toby Vu"
 
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [isCheckedIn, setIsCheckedIn] = useState(false)
-  const [checkInTime, setCheckInTime] = useState<string | null>(null)
   const [showLeaveForm, setShowLeaveForm] = useState(false)
+  const [activeTab, setActiveTab] = useState("personal")
+  
+  const canViewCompany = role === "DIRECTOR" || role === "MANAGER"
   
   const [cooldown, setCooldown] = useState(0)
   const [logs, setLogs] = useState<AttendanceLog[]>([])
@@ -33,10 +39,14 @@ export default function AttendancePage() {
 
   // Leave Form states
   const [leaveRequests, setLeaveRequests] = useState<any[]>([])
-  const [leaveType, setLeaveType] = useState("Nghỉ phép năm")
+  const [leaveType, setLeaveType] = useState(t("attendance.annual_leave"))
   const [fromDate, setFromDate] = useState("")
   const [toDate, setToDate] = useState("")
   const [leaveReason, setLeaveReason] = useState("")
+
+  useEffect(() => {
+    setLeaveType(t("attendance.annual_leave"))
+  }, [t])
 
   // Update clock
   useEffect(() => {
@@ -60,7 +70,7 @@ export default function AttendancePage() {
     
     const loadAttendance = async () => {
       try {
-        const res = await fetch('/api/db?collection=attendance', { cache: 'no-store' })
+        const res = await fetch(`/api/db?collection=attendance_${role}`, { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
           if (data) {
@@ -68,17 +78,15 @@ export default function AttendancePage() {
             
             let checkedInToday = false
             if (lastCheckInMs) {
-              const lastCheckInDate = new Date(lastCheckInMs)
+              const lastCheckInDate = new Date(parseInt(lastCheckInMs, 10))
               if (isToday(lastCheckInDate)) {
                 checkedInToday = true
-                setIsCheckedIn(checkedIn === "true" || checkedIn === true)
-                setCheckInTime(checkInTime)
+                setAttendanceState({ isCheckedIn: (checkedIn === "true" || checkedIn === true), checkInTime })
               }
             }
             
             if (!checkedInToday) {
-              setIsCheckedIn(false)
-              setCheckInTime(null)
+              setAttendanceState({ isCheckedIn: false, checkInTime: null })
             }
             
             if (logs) {
@@ -181,8 +189,7 @@ export default function AttendancePage() {
 
   const saveAttendanceData = (newLogs: AttendanceLog[], checkedIn: boolean, time: string | null) => {
     setLogs(newLogs)
-    setIsCheckedIn(checkedIn)
-    setCheckInTime(time)
+    setAttendanceState({ isCheckedIn: checkedIn, checkInTime: time })
     
     const attendanceData = {
       logs: newLogs,
@@ -191,7 +198,7 @@ export default function AttendancePage() {
       lastCheckInMs: time ? String(Date.now()) : null
     }
     
-    fetch('/api/db?collection=attendance', {
+    fetch(`/api/db?collection=attendance_${role}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(attendanceData),
@@ -200,7 +207,7 @@ export default function AttendancePage() {
   }
 
   const handleCheckIn = () => {
-    if (isCheckedIn) {
+    if (attendanceState.isCheckedIn) {
       if (cooldown > 0) return
       
       const now = new Date()
@@ -215,7 +222,7 @@ export default function AttendancePage() {
       
       const updatedLogs = [newLog, ...logs]
       saveAttendanceData(updatedLogs, false, null)
-      toast.success("Check Out thành công!")
+      toast.success(t("attendance.checkout_success"))
     } else {
       const now = new Date()
       const timeStr = now.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })
@@ -232,13 +239,13 @@ export default function AttendancePage() {
       const updatedLogs = [newLog, ...logs]
       saveAttendanceData(updatedLogs, true, timeStr)
       setCooldown(5)
-      toast.success("Check In thành công!")
+      toast.success(t("attendance.checkin_success"))
     }
   }
 
   const handleCreateLeaveRequest = () => {
     if (!fromDate || !toDate || !leaveReason.trim()) {
-      toast.error("Vui lòng nhập đầy đủ từ ngày, đến ngày và lý do!")
+      toast.error(t("attendance.error_empty_fields"))
       return
     }
 
@@ -272,8 +279,8 @@ export default function AttendancePage() {
       .then(notifs => {
         const newNotif = {
           id: Date.now() + Math.random(),
-          text: `Nhân viên Toby Vu đã gửi đơn xin nghỉ phép mới (${newRequest.type})`,
-          time: "Vừa xong",
+          text: t("attendance.notif_new_leave").replace("{user}", currentUser).replace("{type}", newRequest.type),
+          time: t("common.just_now"),
           read: false
         }
         const updatedNotifs = [newNotif, ...(notifs || [])]
@@ -286,7 +293,7 @@ export default function AttendancePage() {
       })
       .catch(() => {})
 
-    toast.success("Đã gửi đơn xin nghỉ phép thành công!")
+    toast.success(t("attendance.leave_request_sent"))
     setShowLeaveForm(false)
     
     // Clear form
@@ -298,20 +305,78 @@ export default function AttendancePage() {
   const timeString = currentTime.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateString = currentTime.toLocaleDateString("vi-VN", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
-  const isCheckOutDisabled = isCheckedIn && cooldown > 0
+  const isCheckOutDisabled = attendanceState.isCheckedIn && cooldown > 0
   const hasCheckedOutToday = logs.some(log => log.type === "CHECK_OUT" && isToday(log.timestamp))
-  const isButtonDisabled = isCheckOutDisabled || (hasCheckedOutToday && !isCheckedIn)
+  const isButtonDisabled = isCheckOutDisabled || (hasCheckedOutToday && !attendanceState.isCheckedIn)
+
+  const exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      { "Nhân viên": "Nguyễn Văn A", "Ngày công": 22, "Đi trễ": 1, "Nghỉ phép": 0 },
+      { "Nhân viên": "Trần Thị B", "Ngày công": 21, "Đi trễ": 0, "Nghỉ phép": 1 }
+    ])
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Báo cáo Tháng")
+    XLSX.writeFile(wb, "Bao_cao_cham_cong_thang.xlsx")
+    toast.success("Xuất báo cáo Excel thành công!")
+  }
+
+  const exportToPDF = () => {
+    const doc = new jsPDF()
+    doc.text("BAO CAO CHAM CONG", 14, 15)
+    
+    const tableColumn = ["Nhan vien", "Ngay cong", "Di tre", "Nghi phep"]
+    const tableRows = [
+      ["Nguyen Van A", "22", "1", "0"],
+      ["Tran Thi B", "21", "0", "1"]
+    ]
+
+    ;(doc as any).autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20
+    })
+
+    doc.save("Bao_cao_cham_cong.pdf")
+    toast.success("Xuất báo cáo PDF thành công!")
+  }
 
   return (
     <div className="space-y-6 pb-10">
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <CalendarCheck2 className="w-8 h-8 text-primary" /> Chấm công & Xin nghỉ
-        </h1>
-        <p className="text-muted-foreground mt-1">Quản lý thời gian làm việc và gửi đơn từ hành chính.</p>
-      </motion.div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <CalendarCheck2 className="w-8 h-8 text-primary" /> {t("attendance.title")}
+          </h1>
+          <p className="text-muted-foreground mt-1">{t("attendance.subtitle")}</p>
+        </motion.div>
+        
+        {canViewCompany && (
+          <div className="flex p-1 bg-muted/30 rounded-xl w-fit">
+            <button
+              onClick={() => setActiveTab("personal")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "personal" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <CalendarCheck2 className="w-4 h-4" />
+              {t("attendance_admin.tab_personal") || "Cá nhân"}
+            </button>
+            <button
+              onClick={() => setActiveTab("company")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === "company" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              {t("attendance_admin.tab_company") || "Toàn công ty"}
+            </button>
+          </div>
+        )}
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {activeTab === "personal" ? (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* TIME CLOCK */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -321,7 +386,7 @@ export default function AttendancePage() {
         >
           <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"></div>
           
-          <h2 className="text-sm font-semibold text-muted-foreground mb-6 uppercase tracking-widest">Chấm công hôm nay</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-6 uppercase tracking-widest">{t("attendance.today_attendance")}</h2>
           
           <div className="mb-8">
             <div className="text-5xl font-bold tracking-tighter text-foreground mb-2">
@@ -338,43 +403,43 @@ export default function AttendancePage() {
             className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all duration-300 transform ${
               isButtonDisabled 
                 ? "bg-muted text-muted-foreground opacity-60 cursor-not-allowed" 
-                : isCheckedIn 
+                : attendanceState.isCheckedIn 
                   ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20 hover:scale-[1.02] active:scale-95 shadow-xl" 
                   : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 shadow-xl"
             }`}
           >
-            {hasCheckedOutToday && !isCheckedIn ? (
-              <><CheckCircle2 className="w-5 h-5 text-emerald-500" /> Đã Hoàn Thành Chấm Công</>
-            ) : isCheckedIn ? (
+            {hasCheckedOutToday && !attendanceState.isCheckedIn ? (
+              <><CheckCircle2 className="w-5 h-5 text-emerald-500" /> {t("attendance.attendance_completed")}</>
+            ) : attendanceState.isCheckedIn ? (
               isCheckOutDisabled ? (
-                <><Clock className="w-5 h-5 animate-spin" /> Check Out (Chờ {cooldown}s)</>
+                <><Clock className="w-5 h-5 animate-spin" /> {t("attendance.checkout_wait").replace("{cooldown}", cooldown.toString())}</>
               ) : (
-                <><LogOut className="w-5 h-5" /> Check Out</>
+                <><LogOut className="w-5 h-5" /> {t("attendance.checkout")}</>
               )
             ) : (
-              <><CheckCircle2 className="w-5 h-5" /> Check In</>
+              <><CheckCircle2 className="w-5 h-5" /> {t("attendance.checkin")}</>
             )}
           </button>
 
           {isMounted && (
             <div className="mt-4 w-full">
-              {isCheckedIn && checkInTime ? (
+              {attendanceState.isCheckedIn && attendanceState.checkInTime ? (
                 <div className="flex flex-col items-center gap-1 bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl">
                   <div className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 font-bold">
-                    <CheckCircle2 className="w-4 h-4" /> Đã Check-In hôm nay
+                    <CheckCircle2 className="w-4 h-4" /> {t("attendance.checked_in_today")}
                   </div>
                   <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80">
-                    Lúc {checkInTime} • {dateString}
+                    {t("attendance.at_time")} {attendanceState.checkInTime} • {dateString}
                   </div>
                 </div>
               ) : (
                 logs.length > 0 && logs[0].type === "CHECK_OUT" && (
                   <div className="flex flex-col items-center gap-1 bg-rose-500/5 dark:bg-rose-500/10 border border-rose-500/20 px-4 py-2.5 rounded-xl">
                     <div className="flex items-center gap-1.5 text-sm text-rose-600 dark:text-rose-400 font-bold">
-                      <LogOut className="w-4 h-4" /> Đã Check-Out hôm nay
+                      <LogOut className="w-4 h-4" /> {t("attendance.checked_out_today")}
                     </div>
                     <div className="text-xs text-rose-600/80 dark:text-rose-400/80">
-                      Lúc {logs[0].timestamp.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })} • {dateString}
+                      {t("attendance.at_time")} {logs[0].timestamp.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })} • {dateString}
                     </div>
                   </div>
                 )
@@ -385,15 +450,15 @@ export default function AttendancePage() {
           {isMounted && (
             <div className="mt-6 w-full text-xs text-muted-foreground border-t border-muted/40 pt-4 space-y-2 text-left">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-primary/70" /> IP mạng:</span>
+                <span className="flex items-center gap-1"><Globe className="w-3.5 h-3.5 text-primary/70" /> {t("attendance.ip_address")}</span>
                 <span className="font-mono font-medium">{userIp}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5 text-primary/70" /> Nhà mạng:</span>
+                <span className="flex items-center gap-1"><Wifi className="w-3.5 h-3.5 text-primary/70" /> {t("attendance.isp")}</span>
                 <span className="font-medium truncate max-w-[160px] text-right" title={userIsp}>{userIsp}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-primary/70" /> Định vị:</span>
+                <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-primary/70" /> {t("attendance.location")}</span>
                 <span className="font-medium truncate max-w-[160px] text-right" title={userLocation}>{userLocation}</span>
               </div>
             </div>
@@ -409,13 +474,13 @@ export default function AttendancePage() {
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-primary" /> Lịch sử Nghỉ phép
+              <CalendarDays className="w-5 h-5 text-primary" /> {t("attendance.leave_history")}
             </h2>
             <button 
               onClick={() => setShowLeaveForm(true)}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
             >
-              <FilePlus2 className="w-4 h-4" /> Tạo Đơn Xin Nghỉ
+              <FilePlus2 className="w-4 h-4" /> {t("attendance.create_leave_btn")}
             </button>
           </div>
 
@@ -423,10 +488,10 @@ export default function AttendancePage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-lg">
                 <tr>
-                  <th className="px-4 py-3 font-semibold rounded-tl-lg rounded-bl-lg">Ngày nghỉ</th>
-                  <th className="px-4 py-3 font-semibold">Loại phép</th>
-                  <th className="px-4 py-3 font-semibold">Lý do</th>
-                  <th className="px-4 py-3 font-semibold text-right rounded-tr-lg rounded-br-lg">Trạng thái</th>
+                  <th className="px-4 py-3 font-semibold rounded-tl-lg rounded-bl-lg">{t("attendance.leave_date")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("attendance.leave_type_col")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("attendance.reason_col")}</th>
+                  <th className="px-4 py-3 font-semibold text-right rounded-tr-lg rounded-br-lg">{t("attendance.status_col")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-muted/30">
@@ -438,15 +503,15 @@ export default function AttendancePage() {
                     <td className="px-4 py-4 text-right">
                       {req.status === "APPROVED" || req.status === "Đã duyệt" ? (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-100 px-2.5 py-1 rounded-full">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Đã duyệt
+                          <CheckCircle2 className="w-3.5 h-3.5" /> {t("attendance.status_approved")}
                         </span>
                       ) : req.status === "REJECTED" || req.status === "Từ chối" ? (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 bg-rose-100 px-2.5 py-1 rounded-full">
-                          <X className="w-3.5 h-3.5" /> Từ chối
+                          <X className="w-3.5 h-3.5" /> {t("attendance.status_rejected")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-100 px-2.5 py-1 rounded-full">
-                          <Clock className="w-3.5 h-3.5" /> Chờ duyệt
+                          <Clock className="w-3.5 h-3.5" /> {t("attendance.status_pending")}
                         </span>
                       )}
                     </td>
@@ -468,10 +533,10 @@ export default function AttendancePage() {
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" /> Nhật ký Chấm công Hôm nay (Realtime)
+              <Clock className="w-5 h-5 text-primary" /> {t("attendance.attendance_log")}
             </h2>
             <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full font-semibold flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Hoạt động
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> {t("attendance.active")}
             </span>
           </div>
 
@@ -479,18 +544,18 @@ export default function AttendancePage() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-lg">
                 <tr>
-                  <th className="px-4 py-3 font-semibold rounded-tl-lg rounded-bl-lg">Loại hành động</th>
-                  <th className="px-4 py-3 font-semibold">Thời gian</th>
-                  <th className="px-4 py-3 font-semibold">Ngày chấm công</th>
-                  <th className="px-4 py-3 font-semibold">Địa chỉ IP / Nhà mạng</th>
-                  <th className="px-4 py-3 font-semibold rounded-tr-lg rounded-br-lg">Định vị / GPS</th>
+                  <th className="px-4 py-3 font-semibold rounded-tl-lg rounded-bl-lg">{t("attendance.action_type")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("attendance.time_col")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("attendance.date_col")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("attendance.ip_isp_col")}</th>
+                  <th className="px-4 py-3 font-semibold rounded-tr-lg rounded-br-lg">{t("attendance.location_col")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-muted/30">
                 {logs.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                      Chưa có ghi nhận chấm công nào trong hôm nay.
+                      {t("attendance.no_logs_today")}
                     </td>
                   </tr>
                 ) : (
@@ -541,7 +606,7 @@ export default function AttendancePage() {
             >
               <div className="flex items-center justify-between p-6 border-b bg-muted/20">
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  <FilePlus2 className="w-5 h-5 text-primary" /> Tạo Đơn Xin Nghỉ Phép
+                  <FilePlus2 className="w-5 h-5 text-primary" /> {t("attendance.create_leave_modal_title")}
                 </h2>
                 <button 
                   onClick={() => setShowLeaveForm(false)}
@@ -552,20 +617,20 @@ export default function AttendancePage() {
               </div>
               <div className="p-6 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Loại nghỉ phép</label>
+                  <label className="text-sm font-medium">{t("attendance.leave_type_label")}</label>
                   <select 
                     value={leaveType}
                     onChange={(e) => setLeaveType(e.target.value)}
                     className="w-full bg-muted/50 border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
-                    <option value="Nghỉ phép năm">Nghỉ phép năm (Có lương)</option>
-                    <option value="Nghỉ việc riêng">Nghỉ việc riêng (Không lương)</option>
-                    <option value="Nghỉ ốm">Nghỉ ốm</option>
+                    <option value="Nghỉ phép năm">{t("attendance.annual_leave_paid")}</option>
+                    <option value="Nghỉ việc riêng">{t("attendance.personal_leave_unpaid")}</option>
+                    <option value="Nghỉ ốm">{t("attendance.sick_leave")}</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Từ ngày</label>
+                    <label className="text-sm font-medium">{t("attendance.from_date")}</label>
                     <input 
                       type="date" 
                       value={fromDate}
@@ -574,7 +639,7 @@ export default function AttendancePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Đến ngày</label>
+                    <label className="text-sm font-medium">{t("attendance.to_date")}</label>
                     <input 
                       type="date" 
                       value={toDate}
@@ -584,12 +649,12 @@ export default function AttendancePage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Lý do chi tiết</label>
+                  <label className="text-sm font-medium">{t("attendance.detailed_reason")}</label>
                   <textarea 
                     value={leaveReason}
                     onChange={(e) => setLeaveReason(e.target.value)}
                     className="w-full min-h-[100px] bg-muted/50 border rounded-lg p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
-                    placeholder="Vui lòng nhập rõ lý do..."
+                    placeholder={t("attendance.reason_placeholder")}
                   ></textarea>
                 </div>
               </div>
@@ -598,19 +663,101 @@ export default function AttendancePage() {
                   onClick={() => setShowLeaveForm(false)}
                   className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors"
                 >
-                  Hủy
+                  {t("common.cancel")}
                 </button>
                 <button 
                   onClick={handleCreateLeaveRequest}
                   className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
                 >
-                  <Send className="w-4 h-4" /> Gửi Đơn
+                  <Send className="w-4 h-4" /> {t("attendance.submit_btn")}
                 </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+        </>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          <div className="premium-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <CalendarDays className="w-5 h-5 text-primary" /> {t("attendance_admin.monthly_report") || "Báo cáo Tháng"}
+              </h2>
+              <div className="flex items-center gap-2">
+                <button onClick={exportToExcel} className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-lg text-xs font-semibold transition-colors">
+                  <Download className="w-3.5 h-3.5" /> Excel
+                </button>
+                <button onClick={exportToPDF} className="flex items-center gap-2 px-3 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400 rounded-lg text-xs font-semibold transition-colors">
+                  <Download className="w-3.5 h-3.5" /> PDF
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-lg">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold rounded-tl-lg rounded-bl-lg">{t("attendance_admin.col_employee") || "Nhân viên"}</th>
+                    <th className="px-4 py-3 font-semibold text-center">{t("attendance_admin.col_workdays") || "Ngày công"}</th>
+                    <th className="px-4 py-3 font-semibold text-center">{t("attendance_admin.col_late") || "Đi trễ"}</th>
+                    <th className="px-4 py-3 font-semibold text-center rounded-tr-lg rounded-br-lg">{t("attendance_admin.col_leave") || "Nghỉ phép"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-muted/30">
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-4 font-medium text-foreground">Nguyễn Văn A</td>
+                    <td className="px-4 py-4 text-center font-bold text-emerald-600">22</td>
+                    <td className="px-4 py-4 text-center text-rose-500 font-medium">1</td>
+                    <td className="px-4 py-4 text-center text-muted-foreground">0</td>
+                  </tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-4 font-medium text-foreground">Trần Thị B</td>
+                    <td className="px-4 py-4 text-center font-bold text-emerald-600">21</td>
+                    <td className="px-4 py-4 text-center text-rose-500 font-medium">0</td>
+                    <td className="px-4 py-4 text-center text-orange-500 font-medium">1</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="premium-card p-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+              <Clock className="w-5 h-5 text-primary" /> {t("attendance_admin.today_overview") || "Tổng quan Hôm nay"}
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-lg">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold rounded-tl-lg rounded-bl-lg">{t("attendance_admin.col_employee") || "Nhân viên"}</th>
+                    <th className="px-4 py-3 font-semibold">{t("attendance_admin.col_checkin") || "Check-in"}</th>
+                    <th className="px-4 py-3 font-semibold">{t("attendance_admin.col_checkout") || "Check-out"}</th>
+                    <th className="px-4 py-3 font-semibold text-right rounded-tr-lg rounded-br-lg">{t("attendance_admin.col_status") || "Trạng thái"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-muted/30">
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-4 font-medium text-foreground">Nguyễn Văn A</td>
+                    <td className="px-4 py-4 text-muted-foreground font-mono">08:20 AM</td>
+                    <td className="px-4 py-4 text-muted-foreground font-mono">--</td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold">{t("attendance_admin.status_on_time") || "Đúng giờ"}</span>
+                    </td>
+                  </tr>
+                  <tr className="hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-4 font-medium text-foreground">Trần Thị B</td>
+                    <td className="px-4 py-4 text-muted-foreground font-mono">09:45 AM</td>
+                    <td className="px-4 py-4 text-muted-foreground font-mono">--</td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-xs font-semibold">{t("attendance_admin.status_late") || "Đi trễ"}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   )
 }

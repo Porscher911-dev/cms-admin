@@ -22,14 +22,15 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useRole } from "@/components/providers/role-provider"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 // Helpers
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string, t: any) => {
   switch (status) {
-    case "PLANNING": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300"><Clock className="w-3.5 h-3.5" /> Lên kế hoạch</span>
-    case "IN_PROGRESS": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"><FolderKanban className="w-3.5 h-3.5" /> Đang thực hiện</span>
-    case "REVIEW": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400"><AlertCircle className="w-3.5 h-3.5" /> Đang chờ duyệt</span>
-    case "COMPLETED": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"><CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn thành</span>
+    case "PLANNING": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-300"><Clock className="w-3.5 h-3.5" /> {t("projects.status_planning")}</span>
+    case "IN_PROGRESS": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400"><FolderKanban className="w-3.5 h-3.5" /> {t("projects.status_in_progress")}</span>
+    case "REVIEW": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400"><AlertCircle className="w-3.5 h-3.5" /> {t("projects.status_review")}</span>
+    case "COMPLETED": return <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"><CheckCircle2 className="w-3.5 h-3.5" /> {t("projects.status_completed")}</span>
     default: return null
   }
 }
@@ -54,6 +55,7 @@ interface ProjectModalProps {
 }
 
 function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState("")
   const [client, setClient] = useState("")
   const [type, setType] = useState("SEO")
@@ -86,7 +88,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim() || !client.trim()) {
-      toast.error("Vui lòng điền đầy đủ Tên dự án và Khách hàng!")
+      toast.error(t("projects.validation_name_client"))
       return
     }
 
@@ -121,7 +123,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
         className="bg-card w-full max-w-lg rounded-2xl border border-border/80 shadow-2xl overflow-hidden flex flex-col p-6 space-y-4 text-foreground"
       >
         <div className="flex items-center justify-between border-b pb-3 border-border/60">
-          <h3 className="text-xl font-bold">Chỉnh sửa Dự án</h3>
+          <h3 className="text-xl font-bold">{t("projects.edit_project")}</h3>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
@@ -132,7 +134,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Tên Dự án</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.project_name")}</label>
             <input
               type="text"
               value={name}
@@ -143,7 +145,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Khách hàng (Client)</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.client")}</label>
             <input
               type="text"
               value={client}
@@ -155,7 +157,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Loại dự án</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.project_type")}</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
@@ -170,23 +172,23 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Trạng thái</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.status")}</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full px-3 py-2 border border-border/80 rounded-lg bg-card text-sm focus:outline-none"
               >
-                <option value="PLANNING">Lên kế hoạch</option>
-                <option value="IN_PROGRESS">Đang thực hiện</option>
-                <option value="REVIEW">Đang chờ duyệt</option>
-                <option value="COMPLETED">Đã hoàn thành</option>
+                <option value="PLANNING">{t("projects.status_planning")}</option>
+                <option value="IN_PROGRESS">{t("projects.status_in_progress")}</option>
+                <option value="REVIEW">{t("projects.status_review")}</option>
+                <option value="COMPLETED">{t("projects.status_completed")}</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Thời hạn (Due Date)</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.due_date")}</label>
               <input
                 type="date"
                 value={dueDate}
@@ -196,7 +198,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Tiến độ (%)</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.progress")} (%)</label>
               <input
                 type="number"
                 min="0"
@@ -209,7 +211,7 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Thành viên tham gia (cách nhau bằng dấu phẩy)</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.team_members_comma")}</label>
             <input
               type="text"
               value={teamInput}
@@ -219,8 +221,8 @@ function ProjectModal({ isOpen, onClose, onSave, projectToEdit }: ProjectModalPr
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-border/60">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-muted transition-colors">Hủy</button>
-            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg">Lưu lại</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-muted transition-colors">{t("common.cancel")}</button>
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg">{t("common.save")}</button>
           </div>
         </form>
       </motion.div>
@@ -236,9 +238,10 @@ interface AddTaskModalProps {
 }
 
 function AddTaskModal({ isOpen, onClose, onSave, teamMembers }: AddTaskModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState("Bình thường")
+  const [priority, setPriority] = useState(t("projects.priority_normal"))
   const [assignee, setAssignee] = useState("")
   const [date, setDate] = useState("")
 
@@ -246,18 +249,18 @@ function AddTaskModal({ isOpen, onClose, onSave, teamMembers }: AddTaskModalProp
     if (isOpen) {
       setTitle("")
       setDescription("")
-      setPriority("Bình thường")
-      setAssignee(teamMembers[0] || "Chưa giao")
+      setPriority(t("projects.priority_normal"))
+      setAssignee(teamMembers[0] || t("projects.unassigned"))
       setDate("")
     }
-  }, [isOpen, teamMembers])
+  }, [isOpen, teamMembers, t])
 
   if (!isOpen) return null
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) {
-      toast.error("Vui lòng điền tiêu đề công việc!")
+      toast.error(t("projects.validation_task_title"))
       return
     }
 
@@ -267,8 +270,8 @@ function AddTaskModal({ isOpen, onClose, onSave, teamMembers }: AddTaskModalProp
       description: description.trim(),
       priority,
       status: "TODO",
-      assignee: assignee || "Chưa giao",
-      date: date.trim() || "Hôm nay",
+      assignee: assignee || t("projects.unassigned"),
+      date: date.trim() || t("projects.today"),
       comments: []
     })
   }
@@ -281,7 +284,7 @@ function AddTaskModal({ isOpen, onClose, onSave, teamMembers }: AddTaskModalProp
         className="bg-card w-full max-w-md rounded-2xl border border-border/80 shadow-2xl p-6 space-y-4 text-foreground"
       >
         <div className="flex items-center justify-between border-b pb-3 border-border/60">
-          <h3 className="text-lg font-bold">Thêm Công việc mới</h3>
+          <h3 className="text-lg font-bold">{t("projects.add_task")}</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -289,55 +292,55 @@ function AddTaskModal({ isOpen, onClose, onSave, teamMembers }: AddTaskModalProp
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Tiêu đề</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.task_title")}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Thiết kế banner quảng cáo"
+              placeholder={t("projects.task_title_placeholder")}
               className="w-full px-3 py-2 border rounded-lg bg-card text-sm focus:outline-none"
               required
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Mô tả công việc</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.task_desc")}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="VD: Phác thảo 3 mẫu banner kích thước chuẩn..."
+              placeholder={t("projects.task_desc_placeholder")}
               className="w-full h-20 px-3 py-2 border rounded-lg bg-card text-sm focus:outline-none resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Độ ưu tiên</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.priority")}</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg bg-card text-sm focus:outline-none"
               >
-                <option value="Cao">Cao</option>
-                <option value="Bình thường">Bình thường</option>
-                <option value="Thấp">Thấp</option>
+                <option value="Cao">{t("projects.priority_high")}</option>
+                <option value="Bình thường">{t("projects.priority_normal")}</option>
+                <option value="Thấp">{t("projects.priority_low")}</option>
               </select>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-muted-foreground uppercase">Thời hạn / Hạn chót</label>
+              <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.task_due_date")}</label>
               <input
                 type="text"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                placeholder="VD: Hôm nay, Ngày mai, hoặc 20/12"
+                placeholder={t("projects.task_due_placeholder")}
                 className="w-full px-3 py-2 border rounded-lg bg-card text-sm focus:outline-none"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-muted-foreground uppercase">Người thực hiện</label>
+            <label className="text-xs font-bold text-muted-foreground uppercase">{t("projects.assignee")}</label>
             <select
               value={assignee}
               onChange={(e) => setAssignee(e.target.value)}
@@ -346,13 +349,13 @@ function AddTaskModal({ isOpen, onClose, onSave, teamMembers }: AddTaskModalProp
               {teamMembers.map((member) => (
                 <option key={member} value={member}>{member}</option>
               ))}
-              <option value="Chưa giao">Chưa giao (Không có trong danh sách)</option>
+              <option value={t("projects.unassigned")}>{t("projects.unassigned_option")}</option>
             </select>
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-border/60">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-muted">Hủy</button>
-            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">Thêm</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-muted">{t("common.cancel")}</button>
+            <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">{t("common.add")}</button>
           </div>
         </form>
       </motion.div>
@@ -372,10 +375,11 @@ interface TaskDetailsModalProps {
 }
 
 function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers, canManage, role }: TaskDetailsModalProps) {
+  const { t } = useTranslation()
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
-  const [priority, setPriority] = useState("Bình thường")
+  const [priority, setPriority] = useState(t("projects.priority_normal"))
   const [dueDate, setDueDate] = useState("")
   const [assignee, setAssignee] = useState("")
   const [newComment, setNewComment] = useState("")
@@ -384,18 +388,18 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
     if (task) {
       setTitle(task.title || "")
       setDescription(task.description || "")
-      setPriority(task.priority || "Bình thường")
+      setPriority(task.priority || t("projects.priority_normal"))
       setDueDate(task.date || "")
       setAssignee(task.assignee || "")
       setIsEditing(false)
     }
-  }, [task, isOpen])
+  }, [task, isOpen, t])
 
   if (!isOpen || !task) return null
 
   const handleSave = () => {
     if (!title.trim()) {
-      toast.error("Vui lòng nhập tiêu đề công việc!")
+      toast.error(t("projects.validation_task_title"))
       return
     }
     onSave({
@@ -419,7 +423,7 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
   const handleAddComment = () => {
     if (!newComment.trim()) return
     const authorName = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
-    const roleLabel = role === "DIRECTOR" ? "Ban Giám đốc" : role === "MANAGER" ? "Quản lý" : "Nhân viên"
+    const roleLabel = role === "DIRECTOR" ? t("company.board_of_directors") : role === "MANAGER" ? t("roles.manager") : t("roles.employee")
     const avatarLabel = role === "DIRECTOR" ? "NĐ" : role === "MANAGER" ? "VH" : "TV"
 
     const comment = {
@@ -436,16 +440,16 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
       comments: [...(task.comments || []), comment]
     })
     setNewComment("")
-    toast.success("Đã thêm nhận xét!")
+    toast.success(t("projects.comment_added"))
   }
 
   const handleDeleteComment = (commentId: string) => {
-    if (confirm("Bạn có chắc chắn muốn xóa nhận xét này?")) {
+    if (confirm(t("projects.confirm_delete_comment"))) {
       onSave({
         ...task,
         comments: (task.comments || []).filter((c: any) => c.id !== commentId)
       })
-      toast.success("Đã xóa nhận xét!")
+      toast.success(t("projects.comment_deleted"))
     }
   }
 
@@ -472,12 +476,12 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
               <span className={`px-2 py-0.5 rounded font-bold ${
                 task.status === 'DONE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400'
               }`}>
-                Trạng thái: {task.status}
+                {t("projects.status")}: {task.status === "TODO" ? t("projects.status_todo") : task.status === "IN_PROGRESS" ? t("projects.status_in_progress") : t("projects.status_done")}
               </span>
               <span className={`px-2 py-0.5 rounded font-bold ${
                 task.priority === 'Cao' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
               }`}>
-                Độ ưu tiên: {task.priority || "Bình thường"}
+                {t("projects.priority")}: {task.priority || t("projects.priority_normal")}
               </span>
             </div>
           </div>
@@ -489,24 +493,24 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-2">
           <div className="md:col-span-2 space-y-4">
             <div>
-              <h4 className="text-xs font-bold text-muted-foreground uppercase mb-1">Mô tả công việc</h4>
+              <h4 className="text-xs font-bold text-muted-foreground uppercase mb-1">{t("projects.task_desc")}</h4>
               {isEditing ? (
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full h-24 text-sm bg-muted/40 border border-border/80 rounded p-2 focus:outline-none resize-none"
-                  placeholder="Nhập mô tả..."
+                  placeholder={t("projects.task_desc_placeholder_edit")}
                 />
               ) : (
                 <p className="text-sm bg-muted/20 p-3 rounded-lg border border-border/30 whitespace-pre-wrap">
-                  {task.description || "Chưa có mô tả chi tiết."}
+                  {task.description || t("projects.no_task_desc")}
                 </p>
               )}
             </div>
 
             <div className="space-y-3 pt-2">
               <h4 className="text-sm font-bold flex items-center gap-1.5">
-                <MessageSquare className="w-4 h-4 text-primary" /> Nhận xét ({task.comments?.length || 0})
+                <MessageSquare className="w-4 h-4 text-primary" /> {t("projects.comments")} ({task.comments?.length || 0})
               </h4>
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {task.comments && task.comments.length > 0 ? (
@@ -516,7 +520,7 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
                         <button
                           onClick={() => handleDeleteComment(c.id)}
                           className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="Xóa nhận xét"
+                          title={t("projects.delete_comment")}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -535,14 +539,14 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-4 border border-dashed rounded-lg text-xs text-muted-foreground">Chưa có nhận xét nào.</div>
+                  <div className="text-center py-4 border border-dashed rounded-lg text-xs text-muted-foreground">{t("projects.no_comments")}</div>
                 )}
               </div>
 
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Viết nhận xét..."
+                  placeholder={t("projects.write_comment")}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment() }}
@@ -553,18 +557,18 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
                   disabled={!newComment.trim()}
                   className="bg-primary text-primary-foreground px-4 py-1.5 rounded-lg text-xs font-semibold hover:bg-primary/95 disabled:opacity-50"
                 >
-                  Gửi
+                  {t("common.send")}
                 </button>
               </div>
             </div>
           </div>
 
           <div className="bg-muted/10 border border-border/80 p-4 rounded-xl space-y-4 h-fit">
-            <h4 className="text-xs font-bold text-muted-foreground uppercase border-b pb-1 border-border/60">Chi tiết công việc</h4>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase border-b pb-1 border-border/60">{t("projects.task_details")}</h4>
 
             <div className="space-y-3 text-xs">
               <div className="space-y-1">
-                <span className="text-muted-foreground block">Người thực hiện</span>
+                <span className="text-muted-foreground block">{t("projects.assignee")}</span>
                 {isEditing ? (
                   <select
                     value={assignee}
@@ -575,12 +579,12 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
                     <option value="Chưa giao">Chưa giao</option>
                   </select>
                 ) : (
-                  <span className="font-semibold block">{task.assignee || "Chưa giao"}</span>
+                  <span className="font-semibold block">{task.assignee || t("projects.unassigned")}</span>
                 )}
               </div>
 
               <div className="space-y-1">
-                <span className="text-muted-foreground block">Độ ưu tiên</span>
+                <span className="text-muted-foreground block">{t("projects.priority")}</span>
                 {isEditing ? (
                   <select
                     value={priority}
@@ -595,13 +599,13 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
                   <span className={`font-semibold px-2 py-0.5 rounded text-[10px] inline-block ${
                     task.priority === 'Cao' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' : task.priority === 'Thấp' ? 'bg-slate-100 text-slate-700 dark:bg-slate-800/40 dark:text-slate-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400'
                   }`}>
-                    {task.priority || "Bình thường"}
+                    {task.priority || t("projects.priority_normal")}
                   </span>
                 )}
               </div>
 
               <div className="space-y-1">
-                <span className="text-muted-foreground block">Hạn chót</span>
+                <span className="text-muted-foreground block">{t("projects.task_due_date")}</span>
                 {isEditing ? (
                   <input
                     type="text"
@@ -610,25 +614,25 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
                     className="w-full border border-border/80 rounded p-1.5 bg-card"
                   />
                 ) : (
-                  <span className="font-semibold block">{task.date || "Hôm nay"}</span>
+                  <span className="font-semibold block">{task.date || t("projects.today")}</span>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <span className="text-muted-foreground block">Trạng thái</span>
+                <span className="text-muted-foreground block">{t("projects.status")}</span>
                 {canManage || task.assignee === (role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu") ? (
                   <select
                     value={task.status}
                     onChange={(e) => handleStatusChange(e.target.value)}
                     className="w-full border border-border/80 rounded p-1.5 bg-card font-semibold"
                   >
-                    <option value="TODO">Cần làm (TODO)</option>
-                    <option value="IN_PROGRESS">Đang thực hiện</option>
-                    <option value="DONE">Hoàn thành (DONE)</option>
+                    <option value="TODO">{t("projects.status_todo")}</option>
+                    <option value="IN_PROGRESS">{t("projects.status_in_progress")}</option>
+                    <option value="DONE">{t("projects.status_done")}</option>
                   </select>
                 ) : (
                   <span className="w-full block border border-border/80 rounded p-1.5 bg-muted/50 font-semibold text-muted-foreground">
-                    {task.status === "TODO" ? "Cần làm (TODO)" : task.status === "IN_PROGRESS" ? "Đang thực hiện" : "Hoàn thành (DONE)"}
+                    {task.status === "TODO" ? t("projects.status_todo") : task.status === "IN_PROGRESS" ? t("projects.status_in_progress") : t("projects.status_done")}
                   </span>
                 )}
               </div>
@@ -638,16 +642,16 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
               <div className="pt-2 border-t border-border/60 space-y-2">
                 {isEditing ? (
                   <div className="flex gap-2">
-                    <button onClick={handleSave} className="flex-1 bg-primary text-primary-foreground py-1.5 rounded text-xs font-semibold hover:bg-primary/95">Lưu</button>
-                    <button onClick={() => setIsEditing(false)} className="flex-1 border border-border/80 py-1.5 rounded text-xs hover:bg-muted">Hủy</button>
+                    <button onClick={handleSave} className="flex-1 bg-primary text-primary-foreground py-1.5 rounded text-xs font-semibold hover:bg-primary/95">{t("common.save")}</button>
+                    <button onClick={() => setIsEditing(false)} className="flex-1 border border-border/80 py-1.5 rounded text-xs hover:bg-muted">{t("common.cancel")}</button>
                   </div>
                 ) : (
                   <button onClick={() => setIsEditing(true)} className="w-full flex items-center justify-center gap-1.5 border border-border/80 hover:bg-muted py-1.5 rounded text-xs font-semibold">
-                    <Edit className="w-3.5 h-3.5" /> Chỉnh sửa
+                    <Edit className="w-3.5 h-3.5" /> {t("common.edit")}
                   </button>
                 )}
                 <button onClick={() => onDelete(task.id)} className="w-full flex items-center justify-center gap-1.5 bg-destructive/10 hover:bg-destructive/20 text-destructive py-1.5 rounded text-xs font-semibold">
-                  <Trash2 className="w-3.5 h-3.5" /> Xóa công việc
+                  <Trash2 className="w-3.5 h-3.5" /> {t("projects.delete_task")}
                 </button>
               </div>
             )}
@@ -667,6 +671,7 @@ interface AddTeamMemberModalProps {
 }
 
 function AddTeamMemberModal({ isOpen, onClose, onSave, currentTeam, employees }: AddTeamMemberModalProps) {
+  const { t } = useTranslation()
   const [selected, setSelected] = useState<string[]>([])
 
   useEffect(() => {
@@ -683,14 +688,14 @@ function AddTeamMemberModal({ isOpen, onClose, onSave, currentTeam, employees }:
         className="bg-card w-full max-w-md rounded-2xl border border-border/80 shadow-2xl p-6 space-y-4 text-foreground flex flex-col max-h-[80vh]"
       >
         <div className="flex items-center justify-between border-b pb-3 border-border/60">
-          <h3 className="text-lg font-bold">Thêm thành viên</h3>
+          <h3 className="text-lg font-bold">{t("projects.add_team_member")}</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="overflow-y-auto flex-1 p-2 border rounded-lg bg-muted/20">
           {employees.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-4">Đang tải danh sách nhân viên...</div>
+            <div className="text-xs text-muted-foreground text-center py-4">{t("projects.loading_employees")}</div>
           ) : (
             employees.map(emp => (
               <label key={emp.id} className="flex items-center gap-3 text-sm cursor-pointer hover:bg-muted p-2 rounded transition-colors">
@@ -713,8 +718,8 @@ function AddTeamMemberModal({ isOpen, onClose, onSave, currentTeam, employees }:
           )}
         </div>
         <div className="flex justify-end gap-3 pt-3 border-t border-border/60">
-          <button onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-muted font-medium">Hủy</button>
-          <button onClick={() => onSave(selected)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 shadow-md">Lưu thay đổi</button>
+          <button onClick={onClose} className="px-4 py-2 border rounded-lg text-sm hover:bg-muted font-medium">{t("common.cancel")}</button>
+          <button onClick={() => onSave(selected)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 shadow-md">{t("common.save_changes")}</button>
         </div>
       </motion.div>
     </div>
@@ -724,6 +729,7 @@ function AddTeamMemberModal({ isOpen, onClose, onSave, currentTeam, employees }:
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { role } = useRole()
+  const { t } = useTranslation()
   const router = useRouter()
   
   const [mounted, setMounted] = useState(false)
@@ -742,10 +748,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const [employees, setEmployees] = useState<any[]>([])
 
   const taskFilters = [
-    { id: "ALL", label: "Tất cả" },
-    { id: "TODO", label: "Cần làm" },
-    { id: "IN_PROGRESS", label: "Đang làm" },
-    { id: "DONE", label: "Hoàn thành" }
+    { id: "ALL", label: t("projects.all_tasks") || "Tất cả" },
+    { id: "TODO", label: t("projects.status_todo") || "Cần làm" },
+    { id: "IN_PROGRESS", label: t("projects.status_in_progress") || "Đang làm" },
+    { id: "DONE", label: t("projects.status_done") || "Hoàn thành" }
   ]
 
   useEffect(() => {
@@ -755,7 +761,19 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         const resEmp = await fetch('/api/db?collection=employees', { cache: 'no-store' })
         if (resEmp.ok) {
           const empData = await resEmp.json()
-          if (empData) setEmployees(empData)
+          if (empData && empData.length > 0) {
+            setEmployees(empData)
+          } else {
+            // Fallback for demo if API is empty
+            const fallbackEmployees = [
+              { id: "E001", name: "Toby Vu", role: "Nhân viên (Design)" },
+              { id: "E002", name: "Vũ Quang Huy", role: "Quản lý" },
+              { id: "E003", name: "Nguyễn Minh Đức", role: "Giám đốc" },
+              { id: "E004", name: "Alice Smith", role: "Nhân viên (Marketing)" },
+              { id: "E005", name: "Bob Johnson", role: "Nhân viên (SEO)" }
+            ]
+            setEmployees(fallbackEmployees)
+          }
         }
       } catch (e) {}
 
@@ -796,7 +814,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
   const handleSaveProjectInfo = (editedProj: any) => {
     updateProject(editedProj)
-    toast.success("Đã cập nhật dự án thành công!")
+    toast.success(t("projects.project_updated") || "Đã cập nhật dự án thành công!")
     setIsEditModalOpen(false)
   }
 
@@ -812,7 +830,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     if (!task) return
 
     if (!canManage && task.assignee !== currentUser) {
-      toast.error("Bạn chỉ có thể cập nhật trạng thái công việc của chính mình!")
+      toast.error(t("projects.validation_task_update_permission") || "Bạn chỉ có thể cập nhật trạng thái công việc của chính mình!")
       return
     }
 
@@ -836,7 +854,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
 
     updateProject(updatedProject)
-    toast.success("Đã cập nhật trạng thái công việc!")
+    toast.success(t("projects.task_updated") || "Đã cập nhật trạng thái công việc!")
   }
 
   const handleAddTask = (newTask: any) => {
@@ -851,7 +869,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
 
     updateProject(updatedProject)
-    toast.success("Đã thêm công việc thành công!")
+    toast.success(t("projects.task_added") || "Đã thêm công việc thành công!")
     setIsAddTaskModalOpen(false)
   }
 
@@ -882,27 +900,27 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       team: selectedMembers
     }
     updateProject(updated)
-    toast.success("Đã cập nhật danh sách thành viên!")
+    toast.success(t("projects.team_updated") || "Đã cập nhật danh sách thành viên!")
     setIsAddMemberModalOpen(false)
   }
 
   const handleRemoveTeamMember = (name: string) => {
-    if (confirm(`Bạn có chắc chắn muốn xóa ${name} khỏi dự án?`)) {
+    if (confirm(t("projects.confirm_remove_member")?.replace("{name}", name) || `Bạn có chắc chắn muốn xóa ${name} khỏi dự án?`)) {
       const updated = {
         ...project,
         team: project.team.filter((t: string) => t !== name)
       }
       updateProject(updated)
-      toast.success(`Đã xóa ${name} khỏi dự án!`)
+      toast.success(t("projects.member_removed")?.replace("{name}", name) || `Đã xóa ${name} khỏi dự án!`)
     }
   }
 
   if (mounted && !project) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <h2 className="text-2xl font-bold">Không tìm thấy dự án!</h2>
+        <h2 className="text-2xl font-bold">{t("projects.project_not_found") || "Không tìm thấy dự án!"}</h2>
         <Link href="/projects" className="text-primary hover:underline flex items-center gap-1">
-          <ArrowLeft className="w-4 h-4" /> Quay lại danh sách
+          <ArrowLeft className="w-4 h-4" /> {t("projects.back_to_list") || "Quay lại danh sách"}
         </Link>
       </div>
     )
@@ -952,13 +970,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               onClick={() => setIsEditModalOpen(true)}
               className="flex items-center gap-2 bg-card border border-border/80 hover:bg-muted text-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
-              <Edit className="w-4 h-4" /> Sửa thông tin
+              <Edit className="w-4 h-4" /> {t("projects.edit_project_info") || "Sửa thông tin"}
             </button>
             <button
               onClick={handleDeleteProject}
               className="flex items-center gap-2 bg-destructive/10 hover:bg-destructive/20 text-destructive px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
-              <Trash2 className="w-4 h-4" /> Xóa Dự án
+              <Trash2 className="w-4 h-4" /> {t("projects.delete_project") || "Xóa Dự án"}
             </button>
           </div>
         )}
@@ -973,13 +991,13 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             className="premium-card p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">Danh sách Công việc (Tasks)</h2>
+              <h2 className="text-lg font-bold">{t("projects.task_list") || "Danh sách Công việc (Tasks)"}</h2>
               {canManage && (
                 <button 
                   onClick={() => setIsAddTaskModalOpen(true)} 
                   className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                 >
-                  <Plus className="w-4 h-4" /> Thêm Task
+                  <Plus className="w-4 h-4" /> {t("projects.add_task") || "Thêm Task"}
                 </button>
               )}
             </div>
@@ -990,7 +1008,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm công việc hoặc người nhận..."
+                  placeholder={t("projects.search_tasks") || "Tìm kiếm công việc hoặc người nhận..."}
                   value={taskSearch}
                   onChange={(e) => setTaskSearch(e.target.value)}
                   className="pl-8 pr-3 py-1.5 bg-muted/20 border rounded-lg text-xs w-full focus:outline-none"
@@ -1062,7 +1080,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 ))
               ) : (
                 <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-sm">
-                  Không tìm thấy công việc nào phù hợp.
+                  {t("projects.no_tasks_found") || "Không tìm thấy công việc nào phù hợp."}
                 </div>
               )}
             </div>
@@ -1076,14 +1094,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             transition={{ delay: 0.2 }}
             className="premium-card p-6"
           >
-            <h2 className="text-lg font-bold mb-4">Thông tin chung</h2>
+            <h2 className="text-lg font-bold mb-4">{t("projects.general_info") || "Thông tin chung"}</h2>
             <div className="space-y-4 text-sm">
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-muted-foreground">Khách hàng</span>
+                <span className="text-muted-foreground">{t("projects.client") || "Khách hàng"}</span>
                 <span className="font-semibold text-foreground">{project.client}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-muted-foreground">Trạng thái</span>
+                <span className="text-muted-foreground">{t("projects.status") || "Trạng thái"}</span>
                 <div className="flex items-center gap-2">
                   {canManage ? (
                     <select
@@ -1098,25 +1116,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                       }}
                       className="bg-card border border-border/80 rounded px-2.5 py-1 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary/20"
                     >
-                      <option value="PLANNING">Lên kế hoạch</option>
-                      <option value="IN_PROGRESS">Đang thực hiện</option>
-                      <option value="REVIEW">Đang chờ duyệt</option>
-                      <option value="COMPLETED">Đã hoàn thành</option>
+                      <option value="PLANNING">{t("projects.status_planning") || "Lên kế hoạch"}</option>
+                      <option value="IN_PROGRESS">{t("projects.status_in_progress") || "Đang thực hiện"}</option>
+                      <option value="REVIEW">{t("projects.status_review") || "Đang chờ duyệt"}</option>
+                      <option value="COMPLETED">{t("projects.status_completed") || "Đã hoàn thành"}</option>
                     </select>
                   ) : (
-                    getStatusBadge(project.status)
+                    getStatusBadge(project.status, t)
                   )}
                 </div>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-muted-foreground">Thời hạn</span>
+                <span className="text-muted-foreground">{t("projects.due_date") || "Thời hạn"}</span>
                 <span className="font-semibold flex items-center gap-1.5"><Clock className="w-4 h-4 text-rose-500" /> {project.dueDate}</span>
               </div>
             </div>
 
             <div className="mt-8">
               <div className="flex justify-between text-sm mb-2 font-medium">
-                <span>Tiến độ tổng thể</span>
+                <span>{t("projects.overall_progress") || "Tiến độ tổng thể"}</span>
                 <span className="text-primary font-bold">{project.progress}%</span>
               </div>
               <div className="h-2.5 w-full bg-muted rounded-full overflow-hidden">
@@ -1132,12 +1150,12 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             className="premium-card p-6"
           >
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Nhân sự tham gia</h2>
+              <h2 className="text-lg font-bold">{t("projects.team_members") || "Nhân sự tham gia"}</h2>
               {canManage && (
                 <button 
                   onClick={handleAddTeamMemberClick} 
                   className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors"
-                  title="Thêm nhân sự"
+                  title={t("projects.add_team_member") || "Thêm nhân sự"}
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -1166,7 +1184,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-muted-foreground">Chưa có nhân sự nào tham gia.</div>
+                <div className="text-xs text-muted-foreground">{t("projects.no_team_members") || "Chưa có nhân sự nào tham gia."}</div>
               )}
             </div>
           </motion.div>
@@ -1204,11 +1222,21 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
         />
       )}
 
+      {isAddMemberModalOpen && (
+        <AddTeamMemberModal
+          isOpen={isAddMemberModalOpen}
+          onClose={() => setIsAddMemberModalOpen(false)}
+          onSave={handleSaveTeamMembers}
+          currentTeam={project.team || []}
+          employees={employees}
+        />
+      )}
+
       {isConfirmDeleteOpen && (
         <ConfirmModal
           isOpen={isConfirmDeleteOpen}
-          title="Xóa dự án"
-          message="Bạn có chắc chắn muốn xóa dự án này? Hành động này không thể hoàn tác."
+          title={t("projects.delete_project") || "Xóa dự án"}
+          message={t("projects.confirm_delete_project") || "Bạn có chắc chắn muốn xóa dự án này? Hành động này không thể hoàn tác."}
           onConfirm={() => {
             const saved = localStorage.getItem("mrex_projects")
             if (saved) {
@@ -1216,7 +1244,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                 const parsed = JSON.parse(saved)
                 const updated = parsed.filter((p: any) => p.id !== id)
                 localStorage.setItem("mrex_projects", JSON.stringify(updated))
-                toast.success("Đã xóa dự án thành công!")
+                toast.success(t("projects.project_deleted") || "Đã xóa dự án thành công!")
                 window.location.href = "/projects" // Hard refresh redirect
               } catch (e) {}
             }
@@ -1229,8 +1257,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       {taskToDeleteId && (
         <ConfirmModal
           isOpen={!!taskToDeleteId}
-          title="Xóa công việc"
-          message="Bạn có chắc chắn muốn xóa công việc này?"
+          title={t("projects.delete_task") || "Xóa công việc"}
+          message={t("projects.confirm_delete_task") || "Bạn có chắc chắn muốn xóa công việc này?"}
           onConfirm={() => {
             const updatedTasks = project.tasks.filter((t: any) => t.id !== taskToDeleteId)
             const doneCount = updatedTasks.filter((t: any) => t.status === "DONE").length
@@ -1245,7 +1273,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             updateProject(updatedProject)
             setSelectedTask(null)
             setTaskToDeleteId(null)
-            toast.success("Đã xóa công việc!")
+            toast.success(t("projects.task_deleted") || "Đã xóa công việc!")
           }}
           onCancel={() => setTaskToDeleteId(null)}
         />
@@ -1283,6 +1311,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: ConfirmMo
             onClick={onCancel}
             className="px-4 py-2 border border-border/80 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
           >
+            {/* Using a generic text or hardcoded since we can't easily pass 't' to ConfirmModal without changing its signature */}
             Hủy
           </button>
           <button

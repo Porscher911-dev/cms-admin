@@ -20,11 +20,13 @@ import {
 } from "lucide-react"
 import { useRole } from "@/components/providers/role-provider"
 import { toast } from "sonner"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 // Types
 type TabType = 'ANNOUNCEMENTS' | 'ORG_CHART' | 'POLICIES'
 
 export default function CompanyPortalPage() {
+  const { t } = useTranslation()
   const { role } = useRole()
   const [activeTab, setActiveTab] = useState<TabType>('ANNOUNCEMENTS')
   
@@ -85,7 +87,7 @@ export default function CompanyPortalPage() {
 
   const handleCreateAnnouncement = () => {
     if (!newAnnouncement.title || !newAnnouncement.content) {
-      toast.error("Vui lòng điền đủ tiêu đề và nội dung!")
+      toast.error(t("company.error_empty_fields"))
       return
     }
     
@@ -94,7 +96,7 @@ export default function CompanyPortalPage() {
       title: newAnnouncement.title,
       content: newAnnouncement.content,
       date: new Date().toLocaleDateString('vi-VN'),
-      author: "Ban Giám Đốc",
+      author: t("company.board_of_directors"),
       isPinned: newAnnouncement.isPinned,
       isUrgent: newAnnouncement.isUrgent
     }
@@ -115,8 +117,8 @@ export default function CompanyPortalPage() {
         const notifs = Array.isArray(data) ? data : []
         const newNotif = {
           id: Date.now(),
-          text: `[Thông báo mới] ${newAnnouncement.title}`,
-          time: "Vừa xong",
+          text: `${t("company.new_announcement_prefix")} ${newAnnouncement.title}`,
+          time: t("common.just_now"),
           read: false
         }
         fetch('/api/db?collection=notifications', {
@@ -129,7 +131,7 @@ export default function CompanyPortalPage() {
 
     setShowAddAnnouncement(false)
     setNewAnnouncement({ title: '', content: '', isPinned: false, isUrgent: false })
-    toast.success("Đã đăng thông báo mới!")
+    toast.success(t("company.announcement_posted"))
   }
 
   const handleDeleteAnnouncement = (id: string) => {
@@ -141,7 +143,7 @@ export default function CompanyPortalPage() {
       body: JSON.stringify(newAnns),
       cache: 'no-store'
     }).catch(() => {})
-    toast.success("Đã xóa thông báo!")
+    toast.success(t("company.announcement_deleted"))
   }
 
   const handleSavePolicies = () => {
@@ -153,7 +155,7 @@ export default function CompanyPortalPage() {
       cache: 'no-store'
     }).catch(() => {})
     setShowEditPolicies(false)
-    toast.success("Đã cập nhật nội quy công ty!")
+    toast.success(t("company.policies_updated"))
   }
 
   const handleEditOrgChartOpen = () => {
@@ -165,16 +167,16 @@ export default function CompanyPortalPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tổ chức & Nội bộ</h1>
-          <p className="text-sm text-muted-foreground mt-1">Thông báo, Nội quy và Sơ đồ tổ chức công ty.</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t("company.title")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("company.subtitle")}</p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex space-x-1 bg-muted p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
-        <TabButton active={activeTab === 'ANNOUNCEMENTS'} onClick={() => setActiveTab('ANNOUNCEMENTS')} icon={Megaphone} label="Bảng tin" />
-        <TabButton active={activeTab === 'ORG_CHART'} onClick={() => setActiveTab('ORG_CHART')} icon={Network} label="Sơ đồ tổ chức" />
-        <TabButton active={activeTab === 'POLICIES'} onClick={() => setActiveTab('POLICIES')} icon={BookOpenText} label="Nội quy & Chính sách" />
+        <TabButton active={activeTab === 'ANNOUNCEMENTS'} onClick={() => setActiveTab('ANNOUNCEMENTS')} icon={Megaphone} label={t("company.tab_announcements")} />
+        <TabButton active={activeTab === 'ORG_CHART'} onClick={() => setActiveTab('ORG_CHART')} icon={Network} label={t("company.tab_org_chart")} />
+        <TabButton active={activeTab === 'POLICIES'} onClick={() => setActiveTab('POLICIES')} icon={BookOpenText} label={t("company.tab_policies")} />
       </div>
 
       {/* Main Content Area */}
@@ -192,7 +194,7 @@ export default function CompanyPortalPage() {
               {role === 'DIRECTOR' && (
                 <div className="flex justify-end">
                   <button onClick={() => setShowAddAnnouncement(true)} className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-                    <Plus className="w-4 h-4" /> Đăng thông báo mới
+                    <Plus className="w-4 h-4" /> {t("company.post_announcement_btn")}
                   </button>
                 </div>
               )}
@@ -212,14 +214,14 @@ export default function CompanyPortalPage() {
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <h3 className="text-lg font-bold">{ann.title}</h3>
-                        {ann.isUrgent && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-800">KHẨN CẤP</span>}
-                        {ann.isPinned && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800">ĐÃ GHIM</span>}
+                        {ann.isUrgent && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border border-rose-200 dark:border-rose-800">{t("company.urgent")}</span>}
+                        {ann.isPinned && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800">{t("company.pinned")}</span>}
                         <div className="flex-1"></div>
                         {role === 'DIRECTOR' && (
                           <button 
-                            onClick={() => handleDeleteAnnouncement(ann.id)}
+                            onClick={(e) => { e.stopPropagation(); handleDeleteAnnouncement(ann.id) }}
                             className="p-1.5 text-muted-foreground hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                            title="Xóa thông báo"
+                            title={t("company.delete_announcement")}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -241,10 +243,10 @@ export default function CompanyPortalPage() {
           {activeTab === 'ORG_CHART' && (
             <div className="premium-card p-8 min-h-[500px]">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-lg font-bold">Sơ đồ tổ chức MREX Agency</h2>
+                <h2 className="text-lg font-bold">{t("company.org_chart_title")}</h2>
                 {role === 'DIRECTOR' && (
                   <button onClick={handleEditOrgChartOpen} className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors">
-                    <Edit3 className="w-4 h-4" /> Chỉnh sửa sơ đồ
+                    <Edit3 className="w-4 h-4" /> {t("company.edit_org_chart")}
                   </button>
                 )}
               </div>
@@ -252,7 +254,7 @@ export default function CompanyPortalPage() {
               <div className="flex flex-col items-center gap-8 py-10 overflow-x-auto">
                 {/* Director */}
                 <div className="relative border-2 border-primary bg-primary/5 text-center p-4 rounded-xl shadow-sm min-w-[200px]">
-                  <h3 className="font-bold text-primary">Ban Giám Đốc</h3>
+                  <h3 className="font-bold text-primary">{t("company.board_of_directors")}</h3>
                   <p className="text-xs text-muted-foreground mt-1">CEO / Director</p>
                   <div className="absolute w-0.5 h-8 bg-border left-1/2 -bottom-8"></div>
                 </div>
@@ -292,10 +294,10 @@ export default function CompanyPortalPage() {
           {activeTab === 'POLICIES' && (
             <div className="premium-card p-8">
               <div className="flex items-center justify-between mb-8 pb-4 border-b">
-                <h2 className="text-xl font-bold flex items-center gap-2"><BookOpenText className="w-5 h-5 text-primary" /> Nội quy & Chính sách</h2>
+                <h2 className="text-xl font-bold flex items-center gap-2"><BookOpenText className="w-5 h-5 text-primary" /> {t("company.tab_policies")}</h2>
                 {role === 'DIRECTOR' && (
                   <button onClick={() => setShowEditPolicies(true)} className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors">
-                    <Edit3 className="w-4 h-4" /> Sửa nội quy
+                    <Edit3 className="w-4 h-4" /> {t("company.edit_policies")}
                   </button>
                 )}
               </div>
@@ -319,42 +321,42 @@ export default function CompanyPortalPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border">
             <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold">Tạo thông báo mới</h2>
+              <h2 className="text-lg font-semibold">{t("company.create_announcement_title")}</h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Tiêu đề</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">{t("company.announcement_title")}</label>
                 <input 
                   type="text" 
                   value={newAnnouncement.title}
                   onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
                   className="w-full bg-muted border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" 
-                  placeholder="Nhập tiêu đề thông báo..." 
+                  placeholder={t("company.announcement_title_placeholder")} 
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Nội dung</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">{t("company.announcement_content")}</label>
                 <textarea 
                   value={newAnnouncement.content}
                   onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
                   className="w-full bg-muted border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all min-h-[120px] resize-none" 
-                  placeholder="Nội dung chi tiết..." 
+                  placeholder={t("company.announcement_content_placeholder")} 
                 />
               </div>
               <div className="flex gap-4 pt-2">
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input type="checkbox" checked={newAnnouncement.isPinned} onChange={(e) => setNewAnnouncement({...newAnnouncement, isPinned: e.target.checked})} className="rounded text-primary focus:ring-primary" />
-                  Ghim lên đầu
+                  {t("company.pin_to_top")}
                 </label>
                 <label className="flex items-center gap-2 text-sm cursor-pointer text-rose-600">
                   <input type="checkbox" checked={newAnnouncement.isUrgent} onChange={(e) => setNewAnnouncement({...newAnnouncement, isUrgent: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-600" />
-                  Đánh dấu Khẩn cấp
+                  {t("company.mark_urgent")}
                 </label>
               </div>
             </div>
             <div className="p-4 border-t bg-muted/30 flex justify-end gap-3">
-              <button onClick={() => setShowAddAnnouncement(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">Hủy</button>
-              <button onClick={handleCreateAnnouncement} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Đăng thông báo</button>
+              <button onClick={() => setShowAddAnnouncement(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">{t("common.cancel")}</button>
+              <button onClick={handleCreateAnnouncement} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">{t("company.post_announcement")}</button>
             </div>
           </motion.div>
         </div>
@@ -365,7 +367,7 @@ export default function CompanyPortalPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border">
             <div className="p-6 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Chỉnh sửa Sơ đồ Tổ chức</h2>
+              <h2 className="text-lg font-semibold">{t("company.edit_org_chart_title")}</h2>
             </div>
             <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="space-y-3">
@@ -381,7 +383,7 @@ export default function CompanyPortalPage() {
                           setEditDepartments(newDepts)
                         }}
                         className="w-full bg-background border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" 
-                        placeholder="Tên phòng ban" 
+                        placeholder={t("company.dept_name")} 
                       />
                       <input 
                         type="text" 
@@ -392,7 +394,7 @@ export default function CompanyPortalPage() {
                           setEditDepartments(newDepts)
                         }}
                         className="w-full bg-background border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" 
-                        placeholder="Mô tả / Chức năng" 
+                        placeholder={t("company.dept_desc")} 
                       />
                       <input 
                         type="text" 
@@ -403,7 +405,7 @@ export default function CompanyPortalPage() {
                           setEditDepartments(newDepts)
                         }}
                         className="w-full bg-background border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none" 
-                        placeholder="Tên nhân viên (cách nhau bởi dấu phẩy)" 
+                        placeholder={t("company.dept_employees")} 
                       />
                     </div>
                     <button 
@@ -419,11 +421,11 @@ export default function CompanyPortalPage() {
                 onClick={() => setEditDepartments([...editDepartments, { id: Date.now().toString(), name: '', desc: '', employees: '' }])}
                 className="w-full py-3 border-2 border-dashed border-primary/30 text-primary font-medium rounded-xl hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
               >
-                <Plus className="w-4 h-4" /> Thêm phòng ban
+                <Plus className="w-4 h-4" /> {t("company.add_dept")}
               </button>
             </div>
             <div className="p-4 border-t bg-muted/30 flex justify-end gap-3">
-              <button onClick={() => setShowEditOrgChart(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">Hủy</button>
+              <button onClick={() => setShowEditOrgChart(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">{t("common.cancel")}</button>
               <button onClick={() => { 
                 setDepartments(editDepartments); 
                 fetch('/api/db?collection=departments', {
@@ -433,8 +435,8 @@ export default function CompanyPortalPage() {
                   cache: 'no-store'
                 }).catch(() => {});
                 setShowEditOrgChart(false); 
-                toast.success("Đã cập nhật sơ đồ tổ chức!") 
-              }} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Lưu cập nhật</button>
+                toast.success(t("company.org_chart_updated")) 
+              }} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">{t("common.save_updates")}</button>
             </div>
           </motion.div>
         </div>
@@ -445,8 +447,8 @@ export default function CompanyPortalPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-3xl rounded-2xl shadow-xl overflow-hidden border flex flex-col max-h-[90vh]">
             <div className="p-6 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Chỉnh sửa Nội quy & Chính sách</h2>
-              <span className="text-xs text-muted-foreground">Hỗ trợ Markdown cơ bản (#, ##, -)</span>
+              <h2 className="text-lg font-semibold">{t("company.edit_policies_title")}</h2>
+              <span className="text-xs text-muted-foreground">{t("company.markdown_support")}</span>
             </div>
             <div className="p-6 flex-1 overflow-y-auto">
               <textarea 
@@ -456,8 +458,8 @@ export default function CompanyPortalPage() {
               />
             </div>
             <div className="p-4 border-t bg-muted/30 flex justify-end gap-3 shrink-0">
-              <button onClick={() => setShowEditPolicies(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">Hủy</button>
-              <button onClick={handleSavePolicies} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Lưu cập nhật</button>
+              <button onClick={() => setShowEditPolicies(false)} className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-lg transition-colors">{t("common.cancel")}</button>
+              <button onClick={handleSavePolicies} className="px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">{t("common.save_updates")}</button>
             </div>
           </motion.div>
         </div>
@@ -470,7 +472,7 @@ export default function CompanyPortalPage() {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-700 dark:bg-rose-500/30 dark:text-rose-400">
-                    {selectedAnnouncement.isUrgent ? "KHẨN CẤP" : selectedAnnouncement.isPinned ? "ĐÃ GHIM" : "Tin tức"}
+                    {selectedAnnouncement.isUrgent ? t("company.urgent") : selectedAnnouncement.isPinned ? t("company.pinned") : t("company.news")}
                   </span>
                   <span className="text-xs text-muted-foreground">{selectedAnnouncement.date}</span>
                 </div>
@@ -484,8 +486,8 @@ export default function CompanyPortalPage() {
               {selectedAnnouncement.content}
             </div>
             <div className="p-4 border-t bg-muted/30 flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Người đăng: <span className="font-semibold text-foreground">{selectedAnnouncement.author}</span></span>
-              <button onClick={(e) => { e.stopPropagation(); setSelectedAnnouncement(null); }} className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">Đóng</button>
+              <span className="text-muted-foreground">{t("company.posted_by")} <span className="font-semibold text-foreground">{selectedAnnouncement.author}</span></span>
+              <button onClick={(e) => { e.stopPropagation(); setSelectedAnnouncement(null); }} className="px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">{t("common.close")}</button>
             </div>
           </motion.div>
         </div>

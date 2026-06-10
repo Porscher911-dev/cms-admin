@@ -21,7 +21,10 @@ import {
   CheckSquare,
   ClipboardList,
   CalendarCheck2,
-  Building2
+  Building2,
+  FileSignature,
+  Receipt,
+  MessageSquare
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -37,7 +40,10 @@ const routes = [
   { icon: Calendar, label: "Calendar", href: "/calendar", tKey: "calendar" },
   { icon: TrendingUp, label: "Finance", href: "/finance", tKey: "finance" },
   { icon: Clock, label: "HR", href: "/hr", tKey: "hr" },
+  { icon: FileSignature, label: "Contracts", href: "/contracts", tKey: "contracts" },
   { icon: FileText, label: "Approvals", href: "/approvals", tKey: "approvals" },
+  { icon: Receipt, label: "Expenses", href: "/expenses", tKey: "expenses" },
+  { icon: MessageSquare, label: "Chat", href: "/chat", tKey: "chat" },
   { icon: Building2, label: "Company", href: "/company", tKey: "company" },
   { icon: Settings, label: "Settings", href: "/settings", tKey: "settings" }
 ]
@@ -74,10 +80,10 @@ export function AppSidebar() {
     if (route.href === "/") return false;
 
     if (role === "MANAGER") {
-      return ["/workspace", "/attendance", "/tasks", "/reports", "/projects", "/calendar", "/approvals", "/company", "/settings"].includes(route.href);
+      return ["/workspace", "/attendance", "/tasks", "/reports", "/projects", "/calendar", "/approvals", "/contracts", "/expenses", "/chat", "/company", "/settings"].includes(route.href);
     }
     if (role === "EMPLOYEE") {
-      return ["/workspace", "/attendance", "/tasks", "/reports", "/projects", "/calendar", "/company", "/settings"].includes(route.href);
+      return ["/workspace", "/attendance", "/tasks", "/reports", "/projects", "/calendar", "/expenses", "/chat", "/company", "/settings"].includes(route.href);
     }
     return false;
   })
@@ -96,20 +102,18 @@ export function AppSidebar() {
         "fixed inset-y-0 left-0 z-50 w-64 border-r bg-card flex flex-col transform transition-transform duration-300 md:relative md:translate-x-0 md:shrink-0",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="h-16 flex items-center px-6 border-b justify-between md:justify-start">
-          <div className="font-bold text-xl text-primary flex items-center gap-2">
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo" className="max-h-8 max-w-[120px] object-contain" />
-            ) : (
-              <>
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-                  M
-                </div>
-                Mrex <span className="text-foreground">Agency</span>
-              </>
-            )}
+        <Link href="/" className="py-6 flex flex-col items-center justify-center border-b gap-2 hover:bg-muted/50 transition-colors">
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-14 max-w-[180px] object-contain drop-shadow-sm" />
+          ) : (
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+              <span className="text-3xl font-black tracking-tighter">M</span>
+            </div>
+          )}
+          <div className="font-black text-xl tracking-tight text-primary">
+            Mrex <span className="text-foreground font-bold">Agency</span>
           </div>
-        </div>
+        </Link>
       
       <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
         {filteredRoutes.map((route) => {
@@ -130,6 +134,22 @@ export function AppSidebar() {
             </Link>
           )
         })}
+      </div>
+
+      <div className="p-4 border-t border-border mt-auto">
+        <div className="bg-primary/10 rounded-xl p-3 flex items-center gap-3 border border-primary/20">
+          {logoUrl && logoUrl !== "/logo.png" ? (
+            <img src={logoUrl} alt="Logo" className="w-8 h-8 rounded object-contain" />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
+              M
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground truncate">MRex Agency</p>
+            <p className="text-[10px] text-primary font-medium truncate">Premium CMS</p>
+          </div>
+        </div>
       </div>
     </aside>
     </>

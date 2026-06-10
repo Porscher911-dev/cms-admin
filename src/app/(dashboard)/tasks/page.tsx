@@ -10,6 +10,7 @@ import {
   Send
 } from "lucide-react"
 import { useRole } from "@/components/providers/role-provider"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 /* ─────────────── Types ─────────────── */
 type ColumnId = "todo" | "inProgress" | "review" | "done"
@@ -154,30 +155,30 @@ const initialKanbanData: KanbanData = {
   done: []
 }
 
-const columnConfig: Record<ColumnId, { label: string; color: string; bgColor: string; borderColor: string; icon: React.ReactNode }> = {
+const columnConfig: Record<ColumnId, { labelKey: string; color: string; bgColor: string; borderColor: string; icon: React.ReactNode }> = {
   todo: {
-    label: "TO DO",
+    labelKey: "tasks.todo",
     color: "text-slate-600",
     bgColor: "bg-slate-100",
     borderColor: "border-l-slate-400",
     icon: <ListTodo className="w-4 h-4" />
   },
   inProgress: {
-    label: "IN PROGRESS",
+    labelKey: "tasks.in_progress",
     color: "text-blue-600",
     bgColor: "bg-blue-100",
     borderColor: "border-l-blue-500",
     icon: <Clock className="w-4 h-4" />
   },
   review: {
-    label: "REVIEW",
+    labelKey: "tasks.review",
     color: "text-amber-600",
     bgColor: "bg-amber-100",
     borderColor: "border-l-amber-500",
     icon: <AlertCircle className="w-4 h-4" />
   },
   done: {
-    label: "DONE",
+    labelKey: "tasks.done",
     color: "text-emerald-600",
     bgColor: "bg-emerald-100",
     borderColor: "border-l-emerald-500",
@@ -187,28 +188,40 @@ const columnConfig: Record<ColumnId, { label: string; color: string; bgColor: st
 
 /* ─────────────── Priority Badge ─────────────── */
 function PriorityBadge({ priority }: { priority: Task["priority"] }) {
+  const { t } = useTranslation()
   const styles: Record<string, string> = {
     "Cao": "bg-rose-100 text-rose-600 ring-rose-200",
     "Bình thường": "bg-orange-100 text-orange-600 ring-orange-200",
     "Thấp": "bg-sky-100 text-sky-600 ring-sky-200",
   }
+  const labels: Record<string, string> = {
+    "Cao": t("tasks.priority_high"),
+    "Bình thường": t("tasks.priority_normal"),
+    "Thấp": t("tasks.priority_low"),
+  }
   return (
     <span className={`text-[10px] font-bold px-2 py-1 rounded-full ring-1 ${styles[priority]}`}>
-      {priority}
+      {labels[priority]}
     </span>
   )
 }
 
 /* ─────────────── Role Badge in Comments ─────────────── */
 function RoleBadge({ role }: { role: Comment["role"] }) {
+  const { t } = useTranslation()
   const styles: Record<string, string> = {
     "Quản lý": "bg-blue-100 text-blue-700",
     "Ban Giám đốc": "bg-purple-100 text-purple-700",
     "Nhân viên": "bg-gray-100 text-gray-700",
   }
+  const labels: Record<string, string> = {
+    "Quản lý": t("hr.role_manager"),
+    "Ban Giám đốc": t("hr.role_director"),
+    "Nhân viên": t("hr.role_employee"),
+  }
   return (
     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${styles[role]}`}>
-      {role}
+      {labels[role]}
     </span>
   )
 }
@@ -227,8 +240,10 @@ function TaskModal({
   onAddComment: (taskId: string, comment: Comment) => void
   currentRole: string
 }) {
+  const { t } = useTranslation()
   const [newComment, setNewComment] = useState("")
   const modalRef = useRef<HTMLDivElement>(null)
+  const { userProfile } = useRole()
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
@@ -241,15 +256,15 @@ function TaskModal({
     const roleLabel = currentRole === "DIRECTOR" ? "Ban Giám đốc" : currentRole === "MANAGER" ? "Quản lý" : "Nhân viên"
     const comment: Comment = {
       id: `C${Math.random()}`,
-      author: currentRole === "DIRECTOR" ? "Nguyễn Minh Đức" : currentRole === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu",
+      author: userProfile.name,
       role: roleLabel,
       content: newComment.trim(),
       timestamp: new Date().toLocaleString("vi-VN"),
-      avatar: currentRole === "DIRECTOR" ? "NĐ" : currentRole === "MANAGER" ? "VH" : "TV"
+      avatar: userProfile.avatar || userProfile.name.charAt(0).toUpperCase()
     }
     onAddComment(task.id, comment)
     setNewComment("")
-    toast.success("Đã thêm nhận xét!")
+    toast.success(t("tasks.comment_added"))
   }
 
   const config = columnConfig[column]
@@ -276,7 +291,7 @@ function TaskModal({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${config.bgColor} ${config.color}`}>
-                  {config.label}
+                  {t(config.labelKey)}
                 </span>
                 <PriorityBadge priority={task.priority} />
                 <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-600 ring-1 ring-blue-200">
@@ -299,7 +314,7 @@ function TaskModal({
           {/* Description */}
           <div>
             <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-primary" /> Mô tả chi tiết
+              <FileText className="w-4 h-4 text-primary" /> {t("tasks.detailed_description")}
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed bg-muted/30 p-4 rounded-xl border">
               {task.description}
@@ -310,19 +325,19 @@ function TaskModal({
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-xl border bg-muted/20">
               <div className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
-                <CalendarDays className="w-3.5 h-3.5" /> Ngày tạo
+                <CalendarDays className="w-3.5 h-3.5" /> {t("tasks.created_date")}
               </div>
               <div className="text-sm font-bold">{task.createdAt}</div>
             </div>
             <div className="p-4 rounded-xl border bg-muted/20">
               <div className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" /> Deadline
+                <Clock className="w-3.5 h-3.5" /> {t("tasks.deadline")}
               </div>
               <div className="text-sm font-bold text-orange-600">{task.dueDate}</div>
             </div>
             <div className="p-4 rounded-xl border bg-muted/20">
               <div className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
-                <UserCircle className="w-3.5 h-3.5" /> Người thực hiện
+                <UserCircle className="w-3.5 h-3.5" /> {t("tasks.assignee")}
               </div>
               <div className="text-sm font-bold flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
@@ -333,7 +348,7 @@ function TaskModal({
             </div>
             <div className="p-4 rounded-xl border bg-muted/20">
               <div className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Checklist
+                <CheckCircle2 className="w-3.5 h-3.5" /> {t("tasks.checklist")}
               </div>
               <div className="text-sm font-bold">{task.checklist}</div>
             </div>
@@ -343,13 +358,13 @@ function TaskModal({
           <div>
             <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4 text-primary" />
-              Nhận xét
+              {t("tasks.comments")}
               <span className="text-xs font-normal text-muted-foreground">({task.comments.length})</span>
             </h3>
 
             {task.comments.length === 0 ? (
               <div className="border border-dashed rounded-xl p-6 text-center text-sm text-muted-foreground bg-muted/10">
-                Chưa có nhận xét nào cho task này.
+                {t("tasks.no_comments")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -389,7 +404,7 @@ function TaskModal({
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSubmitComment() }}
-                placeholder="Viết nhận xét..."
+                placeholder={t("tasks.write_comment")}
                 className="flex-1 px-4 py-2.5 bg-muted/30 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground/50"
               />
               <button
@@ -397,7 +412,7 @@ function TaskModal({
                 disabled={!newComment.trim()}
                 className="px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                <Send className="w-4 h-4" /> Gửi
+                <Send className="w-4 h-4" /> {t("common.send")}
               </button>
             </div>
           </div>
@@ -490,6 +505,7 @@ function KanbanColumn({
   onDrop: (columnId: ColumnId) => void
   onTaskClick: (task: Task, column: ColumnId) => void
 }) {
+  const { t } = useTranslation()
   const [isOver, setIsOver] = useState(false)
   const config = columnConfig[columnId]
 
@@ -506,7 +522,7 @@ function KanbanColumn({
       <div className="flex items-center justify-between mb-2 px-1">
         <h3 className={`font-bold text-sm flex items-center gap-2 ${config.color}`}>
           {config.icon}
-          {config.label}
+          {t(config.labelKey)}
           <span className={`${config.bgColor} ${config.color} px-2 py-0.5 rounded-full text-xs`}>
             {tasks.length}
           </span>
@@ -522,7 +538,7 @@ function KanbanColumn({
             exit={{ opacity: 0, height: 0 }}
             className="border-2 border-dashed border-primary/40 rounded-xl flex items-center justify-center text-xs text-primary font-medium bg-primary/5"
           >
-            <ArrowRight className="w-4 h-4 mr-1" /> Thả task vào đây
+            <ArrowRight className="w-4 h-4 mr-1" /> {t("tasks.drop_here")}
           </motion.div>
         )}
       </AnimatePresence>
@@ -542,7 +558,7 @@ function KanbanColumn({
 
       {tasks.length === 0 && !isOver && (
         <div className="border border-dashed border-muted-foreground/20 rounded-xl flex items-center justify-center h-24 text-sm text-muted-foreground bg-muted/5">
-          Chưa có công việc
+          {t("tasks.no_tasks")}
         </div>
       )}
     </div>
@@ -551,8 +567,10 @@ function KanbanColumn({
 
 /* ─────────────── Main Page ─────────────── */
 export default function TasksPage() {
-  const { role } = useRole()
+  const { t } = useTranslation()
+  const { role, userProfile } = useRole()
   const [search, setSearch] = useState("")
+  const [taskView, setTaskView] = useState<"my_tasks" | "team_tasks">(role === "EMPLOYEE" ? "my_tasks" : "team_tasks")
   const [kanban, setKanban] = useState<KanbanData>({ todo: [], inProgress: [], review: [], done: [] })
   const [selectedTask, setSelectedTask] = useState<{ task: Task; column: ColumnId } | null>(null)
 
@@ -571,6 +589,10 @@ export default function TasksPage() {
     }
     loadData()
   }, [])
+
+  useEffect(() => {
+    setTaskView(role === "EMPLOYEE" ? "my_tasks" : "team_tasks")
+  }, [role])
 
   // DnD state
   const dragTaskIdRef = useRef<string | null>(null)
@@ -597,7 +619,7 @@ export default function TasksPage() {
       const updated = { ...prev, [fromColumn]: sourceTasks, [toColumn]: destTasks }
 
       // Toast notification
-      const colLabel = columnConfig[toColumn].label
+      const colLabel = t(columnConfig[toColumn].labelKey)
       if (toColumn === "done") {
         toast.success(`✅ "${movedTask.title}" đã hoàn thành! Tiến độ dự án đã cập nhật.`)
       } else if (toColumn === "review") {
@@ -667,22 +689,21 @@ export default function TasksPage() {
   const projectTasks = allTasks.filter(t => t.projectId === "P1")
   const doneTasks = kanban.done.filter(t => t.projectId === "P1")
   const projectProgress = projectTasks.length > 0 ? Math.round((doneTasks.length / projectTasks.length) * 100) : 0
-  const projectStatus = projectProgress === 100 ? "Hoàn thành" : projectProgress > 0 ? "Đang thực hiện" : "Lên kế hoạch"
+  const projectStatus = projectProgress === 100 ? t("tasks.status_completed") : projectProgress > 0 ? t("tasks.status_in_progress") : t("tasks.status_planning")
 
   /* ─── Filter by search and role ─── */
-  const currentUser = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
+  const currentUser = userProfile?.name || "Toby Vu"
 
   const filterTasks = (tasks: Task[]) => {
     let filtered = tasks
-    if (role === "EMPLOYEE") {
+    if ((role as string) === "EMPLOYEE" || ((role as string) !== "EMPLOYEE" && taskView === "my_tasks")) {
       filtered = filtered.filter(t => t.assignee === currentUser)
     }
     if (!search.trim()) return filtered
     const q = search.toLowerCase()
     return filtered.filter(t =>
       t.title.toLowerCase().includes(q) ||
-      t.description.toLowerCase().includes(q) ||
-      t.project.toLowerCase().includes(q)
+      (t.assignee && t.assignee.toLowerCase().includes(q))
     )
   }
 
@@ -692,9 +713,9 @@ export default function TasksPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <CheckSquare className="w-8 h-8 text-primary" /> Công việc
+            <CheckSquare className="w-8 h-8 text-primary" /> {t("tasks.title")}
           </h1>
-          <p className="text-muted-foreground mt-1">Kanban kéo thả — nhấp vào task để xem chi tiết và nhận xét.</p>
+          <p className="text-muted-foreground mt-1">{t("tasks.subtitle")}</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3">
@@ -702,7 +723,7 @@ export default function TasksPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Tìm nhanh trong trang..."
+              placeholder={t("tasks.search_placeholder")}
               className="w-full pl-9 pr-4 py-2 bg-card border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -717,6 +738,34 @@ export default function TasksPage() {
         </motion.div>
       </div>
 
+      {role !== "EMPLOYEE" && (
+        <div className="flex items-center gap-2 border-b border-border pb-px">
+          <button
+            onClick={() => setTaskView("my_tasks")}
+            className={`relative pb-3 text-sm font-semibold transition-colors ${
+              taskView === "my_tasks" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t("tasks.my_tasks")}
+            {taskView === "my_tasks" && (
+              <motion.div layoutId="taskTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setTaskView("team_tasks")}
+            className={`relative pb-3 text-sm font-semibold transition-colors ml-6 ${
+              taskView === "team_tasks" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t("tasks.team_tasks")}
+            {taskView === "team_tasks" && (
+              <motion.div layoutId="taskTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Tiến độ dự án - REALTIME */}
       <motion.div
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
@@ -724,10 +773,10 @@ export default function TasksPage() {
       >
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Tiến độ dự án của tôi</h2>
-            <p className="text-sm text-muted-foreground">Kéo task sang DONE để cập nhật tiến độ realtime.</p>
+            <h2 className="text-lg font-bold text-foreground">{t("tasks.project_progress")}</h2>
+            <p className="text-sm text-muted-foreground">{t("tasks.progress_desc")}</p>
           </div>
-          <button onClick={() => toast.info("Đang chuyển hướng tới trang Dự án...")} className="text-sm text-primary font-medium hover:underline">Xem tất cả</button>
+          <button onClick={() => toast.info("Đang chuyển hướng tới trang Dự án...")} className="text-sm text-primary font-medium hover:underline">{t("common.view_all")}</button>
         </div>
 
         <div className="space-y-4">
@@ -750,9 +799,9 @@ export default function TasksPage() {
                   </motion.span>
                 </div>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground font-medium">
-                  <span className="flex items-center gap-1"><UserCircle className="w-3.5 h-3.5" /> Quản lý: Vũ Quang Huy</span>
-                  <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Khách hàng: Chưa gắn</span>
-                  <span className="flex items-center gap-1"><ListTodo className="w-3.5 h-3.5" /> Task: {doneTasks.length}/{projectTasks.length}</span>
+                  <span className="flex items-center gap-1"><UserCircle className="w-3.5 h-3.5" /> {t("tasks.manager")} Vũ Quang Huy</span>
+                  <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {t("tasks.client_unassigned")}</span>
+                  <span className="flex items-center gap-1"><ListTodo className="w-3.5 h-3.5" /> {t("tasks.task")} {doneTasks.length}/{projectTasks.length}</span>
                 </div>
               </div>
               <div className="text-right">
@@ -766,7 +815,7 @@ export default function TasksPage() {
                 </motion.div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground justify-end">
                   {projectProgress === 100 && <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />}
-                  {projectProgress === 100 ? "Hoàn thành!" : "Tiến độ"}
+                  {projectProgress === 100 ? t("tasks.completed_excl") : t("tasks.progress")}
                 </div>
               </div>
             </div>
@@ -782,7 +831,7 @@ export default function TasksPage() {
                 />
               </div>
               <div className="flex justify-between mt-2">
-                {["Lên kế hoạch", "Thực hiện", "Review", "Hoàn thành"].map((stage, i) => {
+                {[t("tasks.status_planning"), t("tasks.executing"), t("tasks.reviewing"), t("tasks.status_completed")].map((stage, i) => {
                   const stageProgress = (i / 3) * 100
                   return (
                     <div key={stage} className="flex flex-col items-center">
@@ -802,7 +851,7 @@ export default function TasksPage() {
       {/* Kanban Board */}
       <div className="pt-2">
         <h2 className="text-xl font-bold mb-1">My Tasks</h2>
-        <p className="text-sm text-muted-foreground mb-6">Kéo thả task giữa các cột. Nhấp vào task để xem chi tiết và nhận xét.</p>
+        <p className="text-sm text-muted-foreground mb-6">{t("tasks.kanban_desc")}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {(Object.keys(kanban) as ColumnId[]).map((colId) => (

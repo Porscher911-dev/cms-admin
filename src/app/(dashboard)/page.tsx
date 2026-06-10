@@ -15,7 +15,7 @@ import {
   CalendarDays
 } from "lucide-react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { 
   AreaChart, 
   Area, 
@@ -23,7 +23,11 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from "recharts"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { toast } from "sonner"
@@ -110,11 +114,16 @@ const initialProjects = [
 
 export default function Dashboard() {
   const { t } = useTranslation()
-  const { role } = useRole()
+  const { role, userProfile, attendanceState } = useRole()
   
   const [projects, setProjects] = useState<any[]>([])
+  const [analytics, setAnalytics] = useState<any>(null)
   const [mounted, setMounted] = useState(false)
   const [timeFilter, setTimeFilter] = useState("30_days")
+  const [logoUrl, setLogoUrl] = useState("")
+  const [companyName, setCompanyName] = useState("MRex Agency")
+  const [brandBanner, setBrandBanner] = useState("")
+  const [showMorningReminder, setShowMorningReminder] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -137,8 +146,39 @@ export default function Dashboard() {
         setProjects(initialProjects)
       }
     }
+    
+    const loadAnalytics = async () => {
+      try {
+        const res = await fetch('/api/analytics', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          setAnalytics(data)
+        }
+      } catch (e) {}
+    }
+
     loadProjects()
-  }, [])
+    loadAnalytics()
+
+    const l = localStorage.getItem("mrex_brand_logo")
+    if (l) setLogoUrl(l)
+    
+    // Fetch company name from API/LocalStorage if available, or just fallback
+    const cn = localStorage.getItem("mrex_company_name")
+    if (cn) setCompanyName(cn)
+
+    const bb = localStorage.getItem("mrex_brand_banner")
+    if (bb) setBrandBanner(bb)
+
+    // Check morning reminder
+    const hour = new Date().getHours()
+    // Show reminder if it's morning (before 10 AM) and not checked in
+    if (hour >= 6 && hour < 10 && !attendanceState.isCheckedIn) {
+      setShowMorningReminder(true)
+    } else {
+      setShowMorningReminder(false)
+    }
+  }, [attendanceState.isCheckedIn])
 
   const handleToggleDashboardTask = (projectId: string, taskId: string) => {
     const updatedProjects = projects.map(p => {
@@ -172,16 +212,26 @@ export default function Dashboard() {
       body: JSON.stringify(updatedProjects),
       cache: 'no-store'
     }).catch(() => {})
-    toast.success("Đã cập nhật trạng thái công việc!")
+    toast.success(t("workspace.toast_task_updated"))
   }
 
-  const employeeName = "Toby Vu"
-  
+  const employeeName = userProfile?.name || "Toby Vu"
+
   const assignedProjects = projects.filter(p => p.team && p.team.includes(employeeName))
   
   const assignedTasks = projects.flatMap(p => 
     (p.tasks || []).map((t: any) => ({ ...t, projectId: p.id, projectName: p.name }))
   ).filter(t => t.assignee === employeeName)
+
+  // Live director stats (computed from real projects data)
+  const allTasks = projects.flatMap(p => p.tasks || [])
+  const liveActiveProjects = projects.filter(p => p.status !== 'COMPLETED').length
+  const liveCompletedProjects = projects.filter(p => p.status === 'COMPLETED').length
+  const liveTotalTasks = allTasks.length
+  const liveDoneTasks = allTasks.filter((t: any) => t.status === 'DONE').length
+  const liveAvgProgress = projects.length > 0
+    ? Math.round(projects.reduce((sum, p) => sum + (p.progress || 0), 0) / projects.length)
+    : 0
 
   const mockDataSets = {
     "30_days": {
@@ -225,10 +275,82 @@ export default function Dashboard() {
   }
 
   const currentData = mockDataSets[timeFilter as keyof typeof mockDataSets] || mockDataSets["30_days"]
-  const revenueData = currentData.chart
+  const revenueData = analytics?.financialTrend || currentData.chart
+  const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#f43f5e', '#8b5cf6'];
 
   return (
     <div className="space-y-6 pb-10">
+      {/* Morning Attendance Reminder */}
+      <AnimatePresence>
+        {showMorningReminder && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: "auto", marginBottom: 24 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-start sm:items-center justify-between gap-4 overflow-hidden"
+          >
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg text-amber-600 dark:text-amber-400 shrink-0">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">{t("reminder.title")}</h3>
+                <p className="text-xs text-amber-700/80 dark:text-amber-400/80 mt-0.5">{t("reminder.please_checkin")}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Link 
+                href="/attendance"
+                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
+              >
+                {t("reminder.checkin_now")}
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Banner Chào Mừng */}
+      {role === "DIRECTOR" && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={brandBanner ? { backgroundImage: `url(${brandBanner})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+          className={`relative overflow-hidden rounded-2xl shadow-lg mb-8 p-8 ${brandBanner ? 'text-white' : 'bg-gradient-to-r from-primary/90 to-primary text-primary-foreground'}`}
+        >
+          {brandBanner && <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>}
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-6">
+              {logoUrl ? (
+                <div className="w-20 h-20 bg-white/10 rounded-xl p-2 backdrop-blur-sm border border-white/20 shadow-inner flex items-center justify-center shrink-0">
+                  <img src={logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                </div>
+              ) : (
+                <div className="w-20 h-20 bg-white/20 rounded-xl flex items-center justify-center text-4xl font-bold backdrop-blur-sm border border-white/20 shadow-inner shrink-0">
+                  {companyName.charAt(0)}
+                </div>
+              )}
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Chào mừng đến với {companyName}!</h1>
+                <p className="text-white/90 text-sm sm:text-base max-w-xl">Hệ thống quản trị doanh nghiệp toàn diện. Theo dõi hiệu suất, quản lý dự án và phát triển tổ chức của bạn một cách dễ dàng.</p>
+              </div>
+            </div>
+            <div className="hidden lg:block text-right shrink-0">
+              <p className="text-sm font-medium text-white/80 mb-1">Ngày làm việc</p>
+              <p className="text-xl font-bold">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+          </div>
+          
+          {/* Decorative background elements */}
+          {!brandBanner && (
+            <>
+              <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-1/4 translate-y-1/2 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+            </>
+          )}
+        </motion.div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
@@ -274,16 +396,16 @@ export default function Dashboard() {
             className="grid grid-cols-1 sm:grid-cols-3 gap-6"
           >
             <StatCard 
-              title="Task Đã Hoàn Thành" 
+              title={t("workspace.tasks_completed")} 
               value={mounted ? assignedTasks.filter(t => t.status === "DONE").length.toString() : "0"} 
-              change="Cập nhật tự động" 
+              change={t("workspace.auto_update")} 
               trend="up" 
               icon={CheckCircle2} 
             />
             <StatCard 
-              title="Task Chưa Hoàn Thành" 
+              title={t("workspace.tasks_overdue")} 
               value={mounted ? assignedTasks.filter(t => t.status !== "DONE").length.toString() : "0"} 
-              change="Tiến trình công việc" 
+              change={t("workspace.auto_update")} 
               trend="down" 
               icon={Clock} 
             />
@@ -298,15 +420,15 @@ export default function Dashboard() {
                 <Star className="w-24 h-24 text-emerald-600" />
               </div>
               <div className="flex items-center justify-between mb-4 relative z-10">
-                <h3 className="text-sm font-medium text-emerald-800 dark:text-emerald-400">Đánh Giá Hiệu Suất</h3>
+                <h3 className="text-sm font-medium text-emerald-800 dark:text-emerald-400">{t("workspace.performance_rating")}</h3>
                 <div className="w-10 h-10 rounded-xl bg-emerald-200/50 flex items-center justify-center text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
                   <Star className="w-5 h-5" />
                 </div>
               </div>
               <div className="relative z-10">
-                <h2 className="text-3xl font-bold tracking-tight text-emerald-700 dark:text-emerald-400">Xuất Sắc</h2>
+                <h2 className="text-3xl font-bold tracking-tight text-emerald-700 dark:text-emerald-400">{t("workspace.perf_excellent")}</h2>
                 <div className="flex items-center gap-1 mt-2 text-sm font-medium text-emerald-600 dark:text-emerald-500">
-                  <span>Tỷ lệ đúng hạn: 95.7%</span>
+                  <span>{t("workspace.on_time")} 95.7%</span>
                 </div>
               </div>
             </motion.div>
@@ -321,7 +443,7 @@ export default function Dashboard() {
               transition={{ delay: 0.2 }}
               className="lg:col-span-2 premium-card p-6"
             >
-              <h2 className="text-lg font-bold mb-4">Công việc được giao</h2>
+              <h2 className="text-lg font-bold mb-4">{t("workspace.assigned_tasks")}</h2>
               {mounted && assignedTasks.length > 0 ? (
                 <div className="space-y-3">
                   {assignedTasks.map((task: any) => (
@@ -358,7 +480,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-sm">
-                  Bạn chưa được giao công việc nào.
+                  {t("workspace.no_assigned_tasks")}
                 </div>
               )}
             </motion.div>
@@ -370,7 +492,7 @@ export default function Dashboard() {
               transition={{ delay: 0.3 }}
               className="premium-card p-6"
             >
-              <h2 className="text-lg font-bold mb-4">Dự án tham gia</h2>
+              <h2 className="text-lg font-bold mb-4">{t("workspace.participating_projects")}</h2>
               {mounted && assignedProjects.length > 0 ? (
                 <div className="space-y-4">
                   {assignedProjects.map((project: any) => (
@@ -398,7 +520,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-sm">
-                  Bạn chưa tham gia dự án nào.
+                  {t("workspace.no_projects")}
                 </div>
               )}
             </motion.div>
@@ -416,30 +538,30 @@ export default function Dashboard() {
         >
           <StatCard 
             title={t("dashboard.total_revenue") || "Tổng doanh thu"} 
-            value={currentData.stats.rev} 
+            value={analytics ? `${(analytics.summary.totalRevenue / 1000000).toFixed(1)} Tr` : currentData.stats.rev} 
             change={currentData.stats.revChange} 
             trend="up" 
             icon={DollarSign} 
           />
           <StatCard 
-            title={t("dashboard.active_clients") || "Khách hàng active"} 
-            value={currentData.stats.clients} 
-            change={currentData.stats.clientsChange} 
-            trend="up" 
+            title={t("dashboard.active_clients") || "Chi phí hoạt động"} 
+            value={analytics ? `${(analytics.summary.totalExpenses / 1000000).toFixed(1)} Tr` : currentData.stats.clients} 
+            change="+1.2%" 
+            trend="down" 
             icon={Users} 
           />
           <StatCard 
             title={t("dashboard.active_projects") || "Dự án đang chạy"} 
-            value={currentData.stats.proj} 
-            change={currentData.stats.projChange} 
-            trend={currentData.stats.projChange.startsWith("-") ? "down" : "up"} 
+            value={mounted ? liveActiveProjects.toString() : currentData.stats.proj} 
+            change={mounted ? `${liveCompletedProjects} dự án đã hoàn thành` : currentData.stats.projChange} 
+            trend={liveCompletedProjects > 0 ? "up" : "down"} 
             icon={Briefcase} 
           />
           <StatCard 
-            title={t("dashboard.net_profit") || "Lợi nhuận ròng"} 
-            value={currentData.stats.profit} 
-            change={currentData.stats.profitChange} 
-            trend="up" 
+            title={t("workspace.tasks_completed")} 
+            value={mounted ? `${liveDoneTasks}/${liveTotalTasks}` : "–"} 
+            change={mounted ? `${t("workspace.avg_progress")}: ${liveAvgProgress}%` : "..."} 
+            trend={liveDoneTasks > 0 ? "up" : "down"} 
             icon={TrendingUp} 
           />
         </motion.div>
@@ -501,30 +623,42 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="premium-card p-6 min-h-[400px]"
+            className="premium-card p-6 min-h-[400px] flex flex-col"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Tiến độ Dự án</h2>
-              <Link href="/projects" className="text-sm text-primary font-medium hover:underline">Xem tất cả</Link>
+              <h2 className="text-lg font-semibold">Trạng thái Dự án</h2>
+              <Link href="/projects" className="text-sm text-primary font-medium hover:underline">Xem chi tiết</Link>
             </div>
-            <div className="space-y-4">
-              {projects.slice(0, 5).map((project) => (
-                <div key={project.id} className="flex flex-col gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors group">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium text-sm line-clamp-1">{project.name}</div>
-                    <div className={`text-xs font-semibold px-2 py-0.5 rounded-full ${project.progress === 100 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-primary/10 text-primary'}`}>
-                      {project.progress}%
-                    </div>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                    <div className={`h-full rounded-full ${project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${project.progress}%` }}></div>
-                  </div>
-                  <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                    <span>{project.client}</span>
-                    <span>Deadline: {project.dueDate}</span>
-                  </div>
+            
+            <div className="flex-1 w-full h-[300px]">
+              {analytics?.projectStatusData ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={analytics.projectStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {analytics.projectStatusData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '8px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    />
+                    <Legend verticalAlign="bottom" height={36} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                  Đang tải dữ liệu...
                 </div>
-              ))}
+              )}
             </div>
           </motion.div>
         </div>

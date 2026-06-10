@@ -9,6 +9,7 @@ import {
   MapPin, Bell, Trash2, Eye
 } from "lucide-react"
 import { useRole, type Role } from "@/components/providers/role-provider"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 /* ─────────────── Types ─────────────── */
 type EventCategory = "meeting" | "deadline" | "personal" | "company" | "team"
@@ -31,12 +32,12 @@ interface CalendarEvent {
 }
 
 /* ─────────────── Constants ─────────────── */
-const categoryConfig: Record<EventCategory, { label: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-  meeting: { label: "Cuộc họp", color: "text-blue-700", bgColor: "bg-blue-100", icon: <Video className="w-3 h-3" /> },
-  deadline: { label: "Deadline", color: "text-rose-700", bgColor: "bg-rose-100", icon: <Clock className="w-3 h-3" /> },
-  personal: { label: "Cá nhân", color: "text-violet-700", bgColor: "bg-violet-100", icon: <UserCircle className="w-3 h-3" /> },
-  company: { label: "Công ty", color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Briefcase className="w-3 h-3" /> },
-  team: { label: "Team", color: "text-amber-700", bgColor: "bg-amber-100", icon: <Users className="w-3 h-3" /> },
+const categoryConfig: Record<EventCategory, { labelKey: string; color: string; bgColor: string; icon: React.ReactNode }> = {
+  meeting: { labelKey: "calendar.category_meeting", color: "text-blue-700", bgColor: "bg-blue-100", icon: <Video className="w-3 h-3" /> },
+  deadline: { labelKey: "calendar.category_deadline", color: "text-rose-700", bgColor: "bg-rose-100", icon: <Clock className="w-3 h-3" /> },
+  personal: { labelKey: "calendar.category_personal", color: "text-violet-700", bgColor: "bg-violet-100", icon: <UserCircle className="w-3 h-3" /> },
+  company: { labelKey: "calendar.category_company", color: "text-emerald-700", bgColor: "bg-emerald-100", icon: <Briefcase className="w-3 h-3" /> },
+  team: { labelKey: "calendar.category_team", color: "text-amber-700", bgColor: "bg-amber-100", icon: <Users className="w-3 h-3" /> },
 }
 
 const roleNames: Record<Role, string> = {
@@ -50,9 +51,9 @@ const roleAvatars: Record<Role, string> = {
   EMPLOYEE: "TV",
 }
 const roleLabels: Record<Role, string> = {
-  DIRECTOR: "Ban Giám đốc",
-  MANAGER: "Quản lý",
-  EMPLOYEE: "Nhân viên",
+  DIRECTOR: "hr.role_director",
+  MANAGER: "hr.role_manager",
+  EMPLOYEE: "hr.role_employee",
 }
 
 /* ─────────────── Initial Events ─────────────── */
@@ -150,8 +151,8 @@ function getCalendarDays(month: number, year: number) {
 }
 
 const monthNames = [
-  "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
-  "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+  "1", "2", "3", "4", "5", "6",
+  "7", "8", "9", "10", "11", "12"
 ]
 
 /* ─────────────── Create Event Modal ─────────────── */
@@ -170,6 +171,7 @@ function CreateEventModal({
   currentMonth: number
   currentYear: number
 }) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [date, setDate] = useState(preselectedDate || new Date().getDate())
@@ -233,19 +235,18 @@ function CreateEventModal({
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="bg-card w-full max-w-lg rounded-2xl border shadow-2xl overflow-hidden"
       >
-        {/* Header */}
         <div className="p-6 border-b bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Plus className="w-5 h-5 text-primary" /> Tạo sự kiện mới
+              <Plus className="w-5 h-5 text-primary" /> {t("calendar.new_event")}
             </h2>
             <button onClick={onClose} className="p-2 rounded-xl hover:bg-muted transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Tạo bởi: <span className="font-semibold text-foreground">{roleNames[currentRole]}</span>
-            <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{roleLabels[currentRole]}</span>
+            {t("calendar.created_by")} <span className="font-semibold text-foreground">{roleNames[currentRole]}</span>
+            <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{t(roleLabels[currentRole])}</span>
           </p>
         </div>
 
@@ -253,23 +254,23 @@ function CreateEventModal({
         <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
           {/* Title */}
           <div>
-            <label className="text-sm font-bold text-foreground mb-1.5 block">Tiêu đề *</label>
+            <label className="text-sm font-bold text-foreground mb-1.5 block">{t("calendar.event_title")} *</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="VD: Họp nhóm Marketing..."
+              placeholder={t("calendar.title_placeholder")}
               className="w-full px-4 py-2.5 bg-muted/30 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="text-sm font-bold text-foreground mb-1.5 block">Mô tả</label>
+            <label className="text-sm font-bold text-foreground mb-1.5 block">{t("calendar.description")}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Mô tả chi tiết sự kiện..."
+              placeholder={t("calendar.description_placeholder")}
               rows={3}
               className="w-full px-4 py-2.5 bg-muted/30 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
             />
@@ -278,7 +279,7 @@ function CreateEventModal({
           {/* Date & Time */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-sm font-bold text-foreground mb-1.5 block">Ngày</label>
+              <label className="text-sm font-bold text-foreground mb-1.5 block">{t("calendar.date")}</label>
               <select
                 value={date}
                 onChange={(e) => setDate(Number(e.target.value))}
@@ -290,7 +291,7 @@ function CreateEventModal({
               </select>
             </div>
             <div>
-              <label className="text-sm font-bold text-foreground mb-1.5 block">Bắt đầu</label>
+              <label className="text-sm font-bold text-foreground mb-1.5 block">{t("calendar.start_time")}</label>
               <input
                 type="time"
                 value={startTime}
@@ -299,7 +300,7 @@ function CreateEventModal({
               />
             </div>
             <div>
-              <label className="text-sm font-bold text-foreground mb-1.5 block">Kết thúc</label>
+              <label className="text-sm font-bold text-foreground mb-1.5 block">{t("calendar.end_time")}</label>
               <input
                 type="time"
                 value={endTime}
@@ -311,7 +312,7 @@ function CreateEventModal({
 
           {/* Category */}
           <div>
-            <label className="text-sm font-bold text-foreground mb-2 block">Loại sự kiện</label>
+            <label className="text-sm font-bold text-foreground mb-2 block">{t("calendar.event_category")}</label>
             <div className="flex flex-wrap gap-2">
               {(Object.entries(categoryConfig) as [EventCategory, typeof categoryConfig.meeting][]).map(([key, config]) => (
                 <button
@@ -323,7 +324,7 @@ function CreateEventModal({
                       : "bg-muted/30 text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {config.icon} {config.label}
+                  {config.icon} {t(config.labelKey)}
                 </button>
               ))}
             </div>
@@ -331,7 +332,7 @@ function CreateEventModal({
 
           {/* Visibility */}
           <div>
-            <label className="text-sm font-bold text-foreground mb-2 block">Hiển thị cho</label>
+            <label className="text-sm font-bold text-foreground mb-2 block">{t("calendar.visibility")}</label>
             <div className="flex gap-3">
               <button
                 onClick={() => setVisibility("self")}
@@ -341,7 +342,7 @@ function CreateEventModal({
                     : "bg-muted/30 text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <UserCircle className="w-4 h-4" /> Chỉ mình tôi
+                <UserCircle className="w-4 h-4" /> {t("calendar.only_me")}
               </button>
               <button
                 onClick={() => setVisibility("all")}
@@ -351,7 +352,7 @@ function CreateEventModal({
                     : "bg-muted/30 text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <Users className="w-4 h-4" /> Tất cả mọi người
+                <Users className="w-4 h-4" /> {t("calendar.everyone")}
               </button>
             </div>
           </div>
@@ -363,13 +364,13 @@ function CreateEventModal({
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl text-sm font-bold border hover:bg-muted transition-colors"
           >
-            Hủy
+            {t("common.cancel")}
           </button>
           <button
             onClick={handleSubmit}
             className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20 flex items-center gap-2"
           >
-            <Plus className="w-4 h-4" /> Tạo sự kiện
+            <Plus className="w-4 h-4" /> {t("calendar.add_event")}
           </button>
         </div>
       </motion.div>
@@ -389,6 +390,7 @@ function EventDetailModal({
   onDelete: (id: string) => void
   currentRole: Role
 }) {
+  const { t } = useTranslation()
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
     document.addEventListener("keydown", handleEsc)
@@ -427,11 +429,11 @@ function EventDetailModal({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold ${config.bgColor} ${config.color}`}>
-                  {config.icon} {config.label}
+                  {config.icon} {t(config.labelKey)}
                 </span>
                 {event.visibility === "self" && (
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 text-violet-600">
-                    <Eye className="w-3 h-3" /> Riêng tư
+                    <Eye className="w-3 h-3" /> {t("calendar.private")}
                   </span>
                 )}
               </div>
@@ -455,13 +457,13 @@ function EventDetailModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl border bg-muted/20">
               <div className="text-[11px] font-bold text-muted-foreground mb-1 flex items-center gap-1">
-                <CalendarIcon className="w-3 h-3" /> Ngày
+                <CalendarIcon className="w-3 h-3" /> {t("calendar.date")}
               </div>
               <div className="text-sm font-bold">{event.date}/{event.month + 1}/{event.year}</div>
             </div>
             <div className="p-3 rounded-xl border bg-muted/20">
               <div className="text-[11px] font-bold text-muted-foreground mb-1 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Thời gian
+                <Clock className="w-3 h-3" /> {t("calendar.time")}
               </div>
               <div className="text-sm font-bold">{event.startTime} – {event.endTime}</div>
             </div>
@@ -470,7 +472,7 @@ function EventDetailModal({
           {/* Creator Info */}
           <div className="p-4 rounded-xl border bg-gradient-to-r from-primary/5 to-transparent">
             <div className="text-[11px] font-bold text-muted-foreground mb-2 flex items-center gap-1">
-              <UserCircle className="w-3 h-3" /> Người tạo sự kiện
+              <UserCircle className="w-3 h-3" /> {t("calendar.creator")}
             </div>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -488,7 +490,7 @@ function EventDetailModal({
                     event.createdByRole === "MANAGER" ? "bg-blue-100 text-blue-700" :
                     "bg-emerald-100 text-emerald-700"
                   }`}>
-                    {roleLabels[event.createdByRole]}
+                    {t(roleLabels[event.createdByRole])}
                   </span>
                 </div>
                 <span className="text-[11px] text-muted-foreground">{event.createdAt}</span>
@@ -508,7 +510,7 @@ function EventDetailModal({
               }}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors"
             >
-              <Trash2 className="w-4 h-4" /> Xóa sự kiện
+              <Trash2 className="w-4 h-4" /> {t("common.delete")}
             </button>
           </div>
         )}
@@ -547,6 +549,7 @@ function EventChip({ event, onClick }: { event: CalendarEvent; onClick: () => vo
 
 /* ─────────────── Main Calendar Page ─────────────── */
 export default function CalendarPage() {
+  const { t } = useTranslation()
   const { role } = useRole()
   // Bug #7: Make 'today' reactive so it updates when date changes
   const [today, setToday] = useState(new Date())
@@ -643,22 +646,22 @@ export default function CalendarPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarIcon className="w-8 h-8 text-primary" /> Lịch làm việc
+            <CalendarIcon className="w-8 h-8 text-primary" /> {t("calendar.title")}
           </h1>
-          <p className="text-muted-foreground mt-1">Quản lý sự kiện — nhấp vào ngày để tạo, nhấp vào sự kiện để xem chi tiết.</p>
+          <p className="text-muted-foreground mt-1">{t("calendar.subtitle")}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex gap-3">
           <button
             onClick={goToday}
             className="flex items-center gap-2 bg-card border px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent transition-colors shadow-sm"
           >
-            Hôm nay
+            {t("calendar.today")}
           </button>
           <button
             onClick={() => { setPreselectedDate(null); setShowCreateModal(true) }}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
           >
-            <Plus className="w-4 h-4" /> Tạo sự kiện
+            <Plus className="w-4 h-4" /> {t("calendar.add_event")}
           </button>
         </motion.div>
       </div>
@@ -671,18 +674,18 @@ export default function CalendarPage() {
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border text-sm">
           <CalendarIcon className="w-4 h-4 text-primary" />
           <span className="font-bold">{monthEvents.length}</span>
-          <span className="text-muted-foreground">sự kiện tháng này</span>
+          <span className="text-muted-foreground">{t("calendar.events_this_month")}</span>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card border text-sm">
           <Star className="w-4 h-4 text-amber-500" />
           <span className="font-bold">{myEvents.length}</span>
-          <span className="text-muted-foreground">sự kiện của tôi</span>
+          <span className="text-muted-foreground">{t("calendar.my_events")}</span>
         </div>
         <div className="flex items-center gap-3 ml-auto text-xs text-muted-foreground">
           {(Object.entries(categoryConfig) as [EventCategory, typeof categoryConfig.meeting][]).map(([key, c]) => (
             <span key={key} className={`flex items-center gap-1 ${c.color}`}>
               <span className={`w-2.5 h-2.5 rounded-full ${c.bgColor}`} />
-              {c.label}
+              {t(c.labelKey)}
             </span>
           ))}
         </div>
@@ -699,7 +702,7 @@ export default function CalendarPage() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-primary" />
-            {monthNames[currentMonth]}, {currentYear}
+            {t("common.month")} {monthNames[currentMonth]}, {currentYear}
           </h2>
           <div className="flex gap-2">
             <button onClick={prevMonth} className="p-2 border rounded-lg hover:bg-muted transition-colors">
@@ -748,7 +751,7 @@ export default function CalendarPage() {
                   ))}
                   {dayEvents.length > 2 && (
                     <div className="text-[10px] text-muted-foreground font-bold text-center py-0.5">
-                      +{dayEvents.length - 2} sự kiện khác
+                      +{dayEvents.length - 2} {t("calendar.other_events")}
                     </div>
                   )}
                 </div>
@@ -766,7 +769,7 @@ export default function CalendarPage() {
         className="premium-card p-6"
       >
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Bell className="w-5 h-5 text-primary" /> Sự kiện sắp tới
+          <Bell className="w-5 h-5 text-primary" /> {t("calendar.upcoming_events")}
         </h2>
         <div className="space-y-3">
           {events
@@ -794,7 +797,7 @@ export default function CalendarPage() {
                   {/* Date */}
                   <div className="flex flex-col items-center min-w-[50px]">
                     <span className="text-2xl font-black text-primary">{evt.date}</span>
-                    <span className="text-[10px] font-bold text-muted-foreground">Tháng {evt.month + 1}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground">{t("common.month")} {evt.month + 1}</span>
                   </div>
 
                   {/* Divider */}
@@ -809,8 +812,8 @@ export default function CalendarPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-sm font-bold truncate group-hover:text-primary transition-colors">{evt.title}</h3>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bgColor} ${config.color}`}>
-                        {config.label}
+                      <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bgColor} ${config.color} whitespace-nowrap`}>
+                        {t(config.labelKey)}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -831,7 +834,7 @@ export default function CalendarPage() {
                     </div>
                     <div className="hidden lg:block">
                       <div className="text-xs font-bold">{evt.createdBy}</div>
-                      <div className="text-[10px] text-muted-foreground">{roleLabels[evt.createdByRole]}</div>
+                      <div className="text-[10px] text-muted-foreground">{t(roleLabels[evt.createdByRole])}</div>
                     </div>
                   </div>
                 </motion.div>
@@ -843,7 +846,7 @@ export default function CalendarPage() {
             return evtDate >= new Date(today.getFullYear(), today.getMonth(), today.getDate())
           }).length === 0 && (
             <div className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-xl">
-              Không có sự kiện sắp tới trong tháng này.
+              {t("calendar.no_upcoming_events")}
             </div>
           )}
         </div>

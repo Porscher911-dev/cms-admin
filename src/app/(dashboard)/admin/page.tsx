@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { ShieldAlert, Users, Search, Plus, UserPlus, X, MoreVertical, CheckCircle2, Lock, Edit, Trash2, AlertCircle, Unlock } from "lucide-react"
 import { useRole } from "@/components/providers/role-provider"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 const initialUsers = [
   { id: "U001", name: "Toby Vu", email: "toby.vu@mrex.agency", role: "DIRECTOR", department: "Board of Directors", status: "ACTIVE" },
@@ -24,6 +25,7 @@ const getRoleColor = (role: string) => {
 }
 
 function CreateAccountModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (u: any) => void }) {
+  const { t } = useTranslation()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [role, setRole] = useState("EMPLOYEE")
@@ -33,12 +35,12 @@ function CreateAccountModal({ isOpen, onClose, onSave }: { isOpen: boolean; onCl
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !email.trim()) { toast.error("Vui lòng nhập đầy đủ họ tên và email!"); return }
+    if (!name.trim() || !email.trim()) { toast.error(t("admin.error_empty_fields")); return }
     onSave({
       id: `U${String(Date.now()).slice(-4)}`,
       name: name.trim(), email: email.trim(), role, department, status: "ACTIVE"
     })
-    toast.success("Đã tạo tài khoản và gửi Email cấp phép thành công!")
+    toast.success(t("admin.account_created"))
     onClose()
   }
 
@@ -46,43 +48,43 @@ function CreateAccountModal({ isOpen, onClose, onSave }: { isOpen: boolean; onCl
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-lg rounded-2xl shadow-2xl border border-rose-100 overflow-hidden text-foreground">
         <div className="flex items-center justify-between p-6 border-b bg-rose-50/30 dark:bg-rose-950/10">
-          <h2 className="text-xl font-bold flex items-center gap-2"><UserPlus className="w-5 h-5 text-rose-600" /> Cấp Tài khoản Mới</h2>
+          <h2 className="text-xl font-bold flex items-center gap-2"><UserPlus className="w-5 h-5 text-rose-600" /> {t("admin.create_account")}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-rose-100 hover:text-rose-600 transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Họ và tên nhân viên *</label>
+            <label className="text-sm font-medium">{t("admin.employee_name")}</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Nguyễn Văn A" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/50" required />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Email đăng nhập (Tài khoản) *</label>
+            <label className="text-sm font-medium">{t("admin.login_email")}</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="a.nguyen@mrex.agency" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/50" required />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Mật khẩu khởi tạo</label>
+            <label className="text-sm font-medium">{t("admin.init_password")}</label>
             <input type="text" defaultValue="Mrex@2026" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/50" />
-            <p className="text-xs text-muted-foreground">Nhân viên sẽ được yêu cầu đổi mật khẩu ở lần đăng nhập đầu tiên.</p>
+            <p className="text-xs text-muted-foreground">{t("admin.init_password_desc")}</p>
           </div>
           <div className="grid grid-cols-2 gap-4 pt-2 border-t">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Phân quyền (Role)</label>
+              <label className="text-sm font-medium">{t("admin.role")}</label>
               <select value={role} onChange={e => setRole(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm">
-                <option value="EMPLOYEE">Nhân viên (Employee)</option>
-                <option value="MANAGER">Quản lý (Manager)</option>
-                <option value="DIRECTOR">Giám đốc (Director)</option>
+                <option value="EMPLOYEE">{t("admin.role_employee")}</option>
+                <option value="MANAGER">{t("admin.role_manager")}</option>
+                <option value="DIRECTOR">{t("admin.role_director")}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Phòng ban</label>
+              <label className="text-sm font-medium">{t("admin.department")}</label>
               <select value={department} onChange={e => setDepartment(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-500/50 text-sm">
                 <option>Marketing</option><option>Design</option><option>Sales</option><option>Nhân sự (HR)</option><option>SEO</option><option>Content</option>
               </select>
             </div>
           </div>
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">Hủy bỏ</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">{t("common.cancel")}</button>
             <button type="submit" className="bg-rose-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-rose-700 transition-colors shadow-lg shadow-rose-500/20 flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Tạo Tài khoản
+              <Plus className="w-4 h-4" /> {t("admin.create_btn")}
             </button>
           </div>
         </form>
@@ -92,6 +94,7 @@ function CreateAccountModal({ isOpen, onClose, onSave }: { isOpen: boolean; onCl
 }
 
 function EditUserModal({ isOpen, onClose, onSave, user }: { isOpen: boolean; onClose: () => void; onSave: (u: any) => void; user: any }) {
+  const { t } = useTranslation()
   const [role, setRole] = useState(user?.role || "EMPLOYEE")
   const [department, setDepartment] = useState(user?.department || "")
 
@@ -101,28 +104,28 @@ function EditUserModal({ isOpen, onClose, onSave, user }: { isOpen: boolean; onC
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden text-foreground">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-lg font-bold flex items-center gap-2"><Edit className="w-5 h-5 text-primary" /> Chỉnh sửa — {user.name}</h2>
+          <h2 className="text-lg font-bold flex items-center gap-2"><Edit className="w-5 h-5 text-primary" /> {t("common.edit")} {user.name}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
         <div className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Phân quyền (Role)</label>
+            <label className="text-sm font-medium">{t("admin.role")}</label>
             <select value={role} onChange={e => setRole(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
-              <option value="EMPLOYEE">Nhân viên (Employee)</option>
-              <option value="MANAGER">Quản lý (Manager)</option>
-              <option value="DIRECTOR">Giám đốc (Director)</option>
+              <option value="EMPLOYEE">{t("admin.role_employee")}</option>
+              <option value="MANAGER">{t("admin.role_manager")}</option>
+              <option value="DIRECTOR">{t("admin.role_director")}</option>
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Phòng ban</label>
+            <label className="text-sm font-medium">{t("admin.department")}</label>
             <select value={department} onChange={e => setDepartment(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
               <option>Marketing</option><option>Design</option><option>Sales</option><option>Nhân sự (HR)</option><option>SEO</option><option>Content</option><option>Board of Directors</option>
             </select>
           </div>
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
-            <button onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">Hủy</button>
-            <button onClick={() => { onSave({ ...user, role, department }); toast.success(`Đã cập nhật quyền cho ${user.name}`); onClose() }}
-              className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">Lưu thay đổi</button>
+            <button onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">{t("common.cancel")}</button>
+            <button onClick={() => { onSave({ ...user, role, department }); toast.success(t("admin.role_updated").replace("{name}", user.name)); onClose() }}
+              className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">{t("common.save_changes")}</button>
           </div>
         </div>
       </motion.div>
@@ -131,6 +134,7 @@ function EditUserModal({ isOpen, onClose, onSave, user }: { isOpen: boolean; onC
 }
 
 function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen: boolean; title: string; message: string; onConfirm: () => void; onCancel: () => void }) {
+  const { t } = useTranslation()
   if (!isOpen) return null
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -138,8 +142,8 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen:
         <div className="flex items-center gap-2 text-destructive"><AlertCircle className="w-6 h-6" /><h3 className="text-lg font-bold">{title}</h3></div>
         <p className="text-sm text-muted-foreground">{message}</p>
         <div className="flex justify-end gap-3 pt-2">
-          <button onClick={onCancel} className="px-4 py-2 border rounded-lg text-sm font-medium hover:bg-muted transition-colors">Hủy</button>
-          <button onClick={onConfirm} className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 transition-colors">Xác nhận</button>
+          <button onClick={onCancel} className="px-4 py-2 border rounded-lg text-sm font-medium hover:bg-muted transition-colors">{t("common.cancel")}</button>
+          <button onClick={onConfirm} className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:bg-destructive/90 transition-colors">{t("common.confirm")}</button>
         </div>
       </motion.div>
     </div>
@@ -147,6 +151,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen:
 }
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation()
   const { role } = useRole()
   const [users, setUsers] = useState(initialUsers)
   const [searchTerm, setSearchTerm] = useState("")
@@ -159,8 +164,8 @@ export default function AdminUsersPage() {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center text-center space-y-4">
         <div className="w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mb-4"><ShieldAlert className="w-10 h-10" /></div>
-        <h1 className="text-3xl font-bold text-foreground">Truy cập bị từ chối</h1>
-        <p className="text-muted-foreground max-w-md">Chỉ có Ban Giám Đốc (DIRECTOR) mới có quyền truy cập vào trang Quản trị Hệ thống.</p>
+        <h1 className="text-3xl font-bold text-foreground">{t("admin.access_denied")}</h1>
+        <p className="text-muted-foreground max-w-md">{t("admin.access_denied_desc")}</p>
       </div>
     )
   }
@@ -176,7 +181,7 @@ export default function AdminUsersPage() {
     setUsers(prev => prev.map(u => {
       if (u.id === id) {
         const newStatus = u.status === "LOCKED" ? "ACTIVE" : "LOCKED"
-        toast.success(`Đã ${newStatus === "LOCKED" ? "khóa" : "mở khóa"} tài khoản ${u.name}`)
+        toast.success(newStatus === "LOCKED" ? t("admin.account_locked").replace("{name}", u.name) : t("admin.account_unlocked").replace("{name}", u.name))
         return { ...u, status: newStatus }
       }
       return u
@@ -193,14 +198,14 @@ export default function AdminUsersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-bold tracking-tight text-rose-600 flex items-center gap-2">
-            <ShieldAlert className="w-8 h-8" /> Quản trị Hệ thống
+            <ShieldAlert className="w-8 h-8" /> {t("admin.title")}
           </h1>
-          <p className="text-muted-foreground mt-1">Quản lý tài khoản và phân quyền truy cập nhân sự.</p>
+          <p className="text-muted-foreground mt-1">{t("admin.subtitle")}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-3">
           <button onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-700 transition-colors shadow-lg shadow-rose-500/20">
-            <UserPlus className="w-4 h-4" /> Tạo Tài khoản mới
+            <UserPlus className="w-4 h-4" /> {t("admin.create_account_btn")}
           </button>
         </motion.div>
       </div>
@@ -208,10 +213,10 @@ export default function AdminUsersPage() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="premium-card overflow-hidden border-rose-100 shadow-sm">
         <div className="p-4 border-b flex items-center justify-between gap-4 bg-rose-50/50 dark:bg-rose-950/10">
-          <div className="flex items-center gap-2 text-rose-800 dark:text-rose-400 font-semibold"><Users className="w-5 h-5" /> Danh sách Nhân sự ({users.length})</div>
+          <div className="flex items-center gap-2 text-rose-800 dark:text-rose-400 font-semibold"><Users className="w-5 h-5" /> {t("admin.user_list").replace("{count}", users.length.toString())}</div>
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input type="text" placeholder="Tìm kiếm Email hoặc Tên..."
+            <input type="text" placeholder={t("admin.search_placeholder")}
               className="w-full pl-9 pr-4 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/30 transition-all"
               value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
@@ -221,11 +226,11 @@ export default function AdminUsersPage() {
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-muted-foreground uppercase bg-muted/30">
               <tr>
-                <th className="px-6 py-4 font-semibold">Nhân viên</th>
-                <th className="px-6 py-4 font-semibold">Phân quyền (Role)</th>
-                <th className="px-6 py-4 font-semibold">Phòng ban</th>
-                <th className="px-6 py-4 font-semibold text-center">Trạng thái</th>
-                <th className="px-6 py-4 font-semibold text-right">Hành động</th>
+                <th className="px-6 py-4 font-semibold">{t("admin.col_employee")}</th>
+                <th className="px-6 py-4 font-semibold">{t("admin.role")}</th>
+                <th className="px-6 py-4 font-semibold">{t("admin.department")}</th>
+                <th className="px-6 py-4 font-semibold text-center">{t("admin.status")}</th>
+                <th className="px-6 py-4 font-semibold text-right">{t("admin.action")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -249,11 +254,11 @@ export default function AdminUsersPage() {
                   <td className="px-6 py-4 text-center">
                     {user.status === 'ACTIVE' ? (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Hoạt động
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {t("admin.status_active")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                        <Lock className="w-3.5 h-3.5" /> Đã Khóa
+                        <Lock className="w-3.5 h-3.5" /> {t("admin.status_locked")}
                       </span>
                     )}
                   </td>
@@ -267,15 +272,15 @@ export default function AdminUsersPage() {
                         <div className="absolute right-0 top-10 w-48 bg-card border rounded-lg shadow-lg py-1 z-20 text-sm text-foreground">
                           <button onClick={() => { setEditUser(user); setActiveMenuId(null) }}
                             className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-muted transition-colors">
-                            <Edit className="w-4 h-4 text-muted-foreground" /> Chỉnh sửa Role
+                            <Edit className="w-4 h-4 text-muted-foreground" /> {t("admin.edit_role")}
                           </button>
                           <button onClick={() => handleToggleLock(user.id)}
                             className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-muted transition-colors">
-                            {user.status === "LOCKED" ? <><Unlock className="w-4 h-4 text-emerald-600" /> Mở khóa</> : <><Lock className="w-4 h-4 text-orange-600" /> Khóa tài khoản</>}
+                            {user.status === "LOCKED" ? <><Unlock className="w-4 h-4 text-emerald-600" /> {t("admin.unlock")}</> : <><Lock className="w-4 h-4 text-orange-600" /> {t("admin.lock")}</>}
                           </button>
                           <button onClick={() => { setDeleteId(user.id); setActiveMenuId(null) }}
                             className="flex items-center gap-2 px-3 py-2 w-full text-left text-destructive hover:bg-destructive/10 transition-colors">
-                            <Trash2 className="w-4 h-4" /> Xóa tài khoản
+                            <Trash2 className="w-4 h-4" /> {t("admin.delete_account")}
                           </button>
                         </div>
                       )}
@@ -291,8 +296,8 @@ export default function AdminUsersPage() {
       {showAddModal && <CreateAccountModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} onSave={handleAddUser} />}
       {editUser && <EditUserModal isOpen={!!editUser} onClose={() => setEditUser(null)} onSave={handleEditSave} user={editUser} />}
       {deleteId && (
-        <ConfirmModal isOpen={!!deleteId} title="Xóa tài khoản" message="Bạn có chắc chắn muốn xóa tài khoản này? Hành động không thể hoàn tác."
-          onConfirm={() => { setUsers(prev => prev.filter(u => u.id !== deleteId)); toast.success("Đã xóa tài khoản!"); setDeleteId(null) }}
+        <ConfirmModal isOpen={!!deleteId} title={t("admin.delete_title")} message={t("admin.delete_confirm")}
+          onConfirm={() => { setUsers(prev => prev.filter(u => u.id !== deleteId)); toast.success(t("admin.account_deleted")); setDeleteId(null) }}
           onCancel={() => setDeleteId(null)}
         />
       )}

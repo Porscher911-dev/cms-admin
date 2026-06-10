@@ -10,7 +10,7 @@ import { toast } from "sonner"
 
 export function AppHeader() {
   const { locale, setLocale, t } = useTranslation()
-  const { role, setRole } = useRole()
+  const { role, setRole, userProfile } = useRole()
   const { toggle } = useSidebar()
   const { theme, setTheme } = useTheme()
   const [showLangMenu, setShowLangMenu] = useState(false)
@@ -18,6 +18,7 @@ export function AppHeader() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const profile = userProfile || { name: "Toby Vu", jobTitle: "", avatar: "" }
   
   const [notifications, setNotifications] = useState<any[]>([])
 
@@ -25,6 +26,7 @@ export function AppHeader() {
   const roleRef = useRef<HTMLDivElement>(null)
   const notiRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
+  const prevUnreadCountRef = useRef<number>(0)
 
   // Load notifications from API and listen to updates
   useEffect(() => {
@@ -102,8 +104,41 @@ export function AppHeader() {
 
   const unreadCount = visibleNotifications.filter(n => !n.read).length
 
+  useEffect(() => {
+    if (mounted && unreadCount > prevUnreadCountRef.current) {
+      playNotificationSound()
+    }
+    prevUnreadCountRef.current = unreadCount
+  }, [unreadCount, mounted])
+
+  const playNotificationSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const audioCtx = new AudioContext();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+
+      gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {
+      console.error("Audio playback failed", e);
+    }
+  }
+
   return (
-    <header className="h-16 border-b bg-card flex items-center justify-between px-6 sticky top-0 z-10">
+    <header className="h-16 border-b bg-card flex items-center justify-between px-6 sticky top-0 z-50">
       <div className="flex items-center gap-4">
         <button onClick={toggle} className="md:hidden text-muted-foreground hover:text-foreground">
           <Menu className="w-6 h-6" />
@@ -175,8 +210,8 @@ export function AppHeader() {
           {showNotifications && (
             <div className="absolute top-full right-0 mt-2 w-80 bg-card border rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
               <div className="px-4 py-3 border-b flex items-center justify-between">
-                <h3 className="font-bold text-sm">Thông báo</h3>
-                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{unreadCount} mới</span>
+                <h3 className="font-bold text-sm">{t("header.notifications")}</h3>
+                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{unreadCount} {t("header.new")}</span>
               </div>
               <div className="max-h-72 overflow-y-auto">
                 {visibleNotifications.map((n, idx) => (
@@ -191,7 +226,7 @@ export function AppHeader() {
                 ))}
               </div>
               <div className="px-4 py-2.5 border-t text-center">
-                <button onClick={() => { window.location.href = '/notifications'; setShowNotifications(false); }} className="text-xs text-primary font-semibold hover:underline">Xem tất cả thông báo</button>
+                <button onClick={() => { window.location.href = '/notifications'; setShowNotifications(false); }} className="text-xs text-primary font-semibold hover:underline">{t("header.view_all_notifications")}</button>
               </div>
             </div>
           )}
@@ -202,28 +237,39 @@ export function AppHeader() {
           <button 
             type="button"
             onClick={() => { setShowProfileMenu(!showProfileMenu); setShowNotifications(false); setShowLangMenu(false); }}
-            className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary font-medium cursor-pointer hover:bg-primary/30 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="w-9 h-9 rounded-full border-2 border-primary overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
-            T
+            {profile.avatar ? (
+              <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-primary font-medium text-sm uppercase bg-primary/20 w-full h-full flex items-center justify-center">{profile.name.charAt(0)}</span>
+            )}
           </button>
 
           {showProfileMenu && (
             <div className="absolute top-full right-0 mt-2 w-48 bg-card border rounded-xl shadow-xl overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-              <div className="px-4 py-2 border-b">
-                <p className="text-sm font-semibold text-foreground">Toby Vu</p>
-                <p className="text-xs text-muted-foreground">{role}</p>
+              <div className="px-4 py-3 border-b flex items-center gap-3">
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm uppercase">{profile.name.charAt(0)}</div>
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{profile.name}</p>
+                  <p className="text-xs text-muted-foreground">{profile.jobTitle || role}</p>
+                </div>
               </div>
               <button 
                 onClick={() => { window.location.href = '/settings'; setShowProfileMenu(false); }}
                 className="w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-muted-foreground hover:text-foreground"
               >
-                <User className="w-4 h-4" /> Cài đặt tài khoản
+                <User className="w-4 h-4" /> {t("header.account_settings")}
               </button>
               <button 
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2.5 text-sm hover:bg-destructive/10 transition-colors flex items-center gap-2 text-destructive font-medium border-t mt-1"
               >
-                <LogOut className="w-4 h-4" /> Đăng xuất
+                <LogOut className="w-4 h-4" /> {t("header.logout")}
               </button>
             </div>
           )}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { Plus, MoreHorizontal, MessageCircle, Phone, Calendar as CalendarIcon, X, ChevronRight, Trash2, AlertCircle } from "lucide-react"
+import { useTranslation } from "@/contexts/TranslationContext"
 
 const pipelineStages = [
   { id: "s1", name: "Lead Mới", color: "bg-blue-500" },
@@ -13,16 +14,17 @@ const pipelineStages = [
 ]
 
 const initialLeads = [
-  { id: "L1", stage: "s1", company: "NextGen Tech", value: "$12,000", contact: "John Doe", date: "Hôm nay" },
-  { id: "L2", stage: "s1", company: "Alpha Retail", value: "$8,500", contact: "Sarah Jane", date: "Hôm qua" },
-  { id: "L3", stage: "s1", company: "Beta Solutions", value: "$4,200", contact: "Mike Ross", date: "2 ngày trước" },
-  { id: "L4", stage: "s2", company: "Innova Group", value: "$15,000", contact: "Emily Blunt", date: "3 ngày trước" },
-  { id: "L5", stage: "s2", company: "Global Corp", value: "$25,000", contact: "Chris Evans", date: "3 ngày trước" },
-  { id: "L6", stage: "s3", company: "Mega Store", value: "$45,000", contact: "Tom Holland", date: "Tuần trước" },
-  { id: "L7", stage: "s3", company: "EduTech VN", value: "$18,500", contact: "Zendaya", date: "Tuần trước" },
+  { id: "L1", stage: "s1", company: "NextGen Tech", value: "300.000.000 VNĐ", contact: "John Doe", date: "Hôm nay" },
+  { id: "L2", stage: "s1", company: "Alpha Retail", value: "212.500.000 VNĐ", contact: "Sarah Jane", date: "Hôm qua" },
+  { id: "L3", stage: "s1", company: "Beta Solutions", value: "105.000.000 VNĐ", contact: "Mike Ross", date: "2 ngày trước" },
+  { id: "L4", stage: "s2", company: "Innova Group", value: "375.000.000 VNĐ", contact: "Emily Blunt", date: "3 ngày trước" },
+  { id: "L5", stage: "s2", company: "Global Corp", value: "625.000.000 VNĐ", contact: "Chris Evans", date: "3 ngày trước" },
+  { id: "L6", stage: "s3", company: "Mega Store", value: "1.125.000.000 VNĐ", contact: "Tom Holland", date: "Tuần trước" },
+  { id: "L7", stage: "s3", company: "EduTech VN", value: "462.500.000 VNĐ", contact: "Zendaya", date: "Tuần trước" },
 ]
 
 function AddLeadModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (lead: any) => void }) {
+  const { t } = useTranslation()
   const [company, setCompany] = useState("")
   const [contact, setContact] = useState("")
   const [value, setValue] = useState("")
@@ -37,7 +39,7 @@ function AddLeadModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: (
       id: `L${Date.now()}`,
       company: company.trim(),
       contact: contact.trim() || "N/A",
-      value: value.trim() || "$0",
+      value: value.trim() || "0 VNĐ",
       stage,
       date: "Vừa xong"
     })
@@ -49,33 +51,33 @@ function AddLeadModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden text-foreground">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold">Thêm Lead mới</h2>
+          <h2 className="text-xl font-bold">{t("sales.add_new_lead")}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tên công ty *</label>
+            <label className="text-sm font-medium">{t("sales.company")} *</label>
             <input type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="VD: NextGen Tech" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Người liên hệ</label>
+              <label className="text-sm font-medium">{t("sales.contact_person")}</label>
               <input type="text" value={contact} onChange={e => setContact(e.target.value)} placeholder="John Doe" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Giá trị</label>
-              <input type="text" value={value} onChange={e => setValue(e.target.value)} placeholder="$10,000" className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <label className="text-sm font-medium">{t("sales.value")}</label>
+              <input type="text" value={value} onChange={e => setValue(e.target.value)} placeholder={t("sales.value_placeholder")} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Giai đoạn</label>
+            <label className="text-sm font-medium">{t("sales.stage")}</label>
             <select value={stage} onChange={e => setStage(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
               {pipelineStages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">Hủy</button>
-            <button type="submit" className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">Thêm Lead</button>
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">{t("common.cancel")}</button>
+            <button type="submit" className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">{t("sales.add_lead")}</button>
           </div>
         </form>
       </motion.div>
@@ -100,6 +102,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen:
 }
 
 export default function SalesPipelinePage() {
+  const { t } = useTranslation()
   const [leads, setLeads] = useState(initialLeads)
   const [showAddModal, setShowAddModal] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -163,13 +166,13 @@ export default function SalesPipelinePage() {
     <div className="space-y-6 pb-10 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="text-3xl font-bold tracking-tight">Sales Pipeline</h1>
-          <p className="text-muted-foreground mt-1">Quản lý cơ hội kinh doanh và phễu khách hàng.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("sales.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("sales.subtitle")}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <button onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
-            <Plus className="w-4 h-4" /> Thêm Lead
+            <Plus className="w-4 h-4" /> {t("sales.add_lead")}
           </button>
         </motion.div>
       </div>

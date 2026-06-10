@@ -38,6 +38,8 @@ model User {
   payrolls       Payroll[]
   approvalsSent  ApprovalRequest[] @relation("Requester")
   approvalsRcvd  ApprovalRequest[] @relation("Approver")
+  expenses       Expense[]         @relation("ExpenseUser")
+  leaveRequests  LeaveRequest[]    @relation("LeaveUser")
 }
 
 // -----------------------------------------------------------------------------
@@ -204,4 +206,48 @@ model ApprovalRequest {
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// EXPENSES & CHAT
+// -----------------------------------------------------------------------------
+
+model Expense {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation("ExpenseUser", fields: [userId], references: [id])
+  amount      Float
+  reason      String
+  project     String?
+  status      String   @default("PENDING")
+  date        DateTime @default(now())
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LeaveRequest {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation("LeaveUser", fields: [userId], references: [id])
+  type        String
+  fromDate    DateTime
+  toDate      DateTime
+  reason      String
+  status      String   @default("PENDING")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  senderName  String
+  senderRole  String
+  receiverRole String?
+  content     String
+  isRead      Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
