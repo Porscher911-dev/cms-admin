@@ -2,14 +2,20 @@ const { Client } = require('ssh2');
 const conn = new Client();
 
 const script = `
-echo "=== Test POST Chat API ==="
-curl -X POST http://127.0.0.1:3000/api/chat \\
-  -H "Content-Type: application/json" \\
-  -d '{"senderName":"Test","senderRole":"DIRECTOR","content":"Hello World"}'
+set -e
+echo "=== Updating Source ==="
+cd /var/www/cms-admin
+pwd
 
-echo ""
-echo "=== Test GET Chat API ==="
-curl -s http://127.0.0.1:3000/api/chat?role=DIRECTOR
+git pull origin main
+
+echo "=== Building Project ==="
+export NODE_OPTIONS="--max-old-space-size=1536"
+npm run build
+
+echo "=== Reloading PM2 ==="
+pm2 reload agency-hub
+echo "Done!"
 `;
 
 conn.on('ready', () => {

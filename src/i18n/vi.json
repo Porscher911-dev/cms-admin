@@ -346,7 +346,13 @@
     "toast_replied": "Đã gửi phản hồi đến {name} thành công!",
     "toast_reply_required": "Vui lòng nhập nội dung phản hồi!",
     "toast_file_too_large": "File quá lớn! Vui lòng chọn file nhỏ hơn 5MB.",
-    "delete_report": "Xóa báo cáo"
+    "delete_report": "Xóa báo cáo",
+    "error_empty_done_work": "Vui lòng nhập công việc đã hoàn thành!",
+    "title_employee": "Báo cáo ngày",
+    "subtitle_employee": "Soạn báo cáo công việc hàng ngày.",
+    "notes": "Ghi chú thêm",
+    "attach_file": "Đính kèm file",
+    "send_to_manager": "Gửi Quản lý"
   },
   "settings": {
     "title": "Cài đặt Hệ thống",

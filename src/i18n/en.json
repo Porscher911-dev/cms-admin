@@ -346,7 +346,13 @@
     "toast_replied": "Reply sent to {name} successfully!",
     "toast_reply_required": "Please enter reply content!",
     "toast_file_too_large": "File too large! Please select a file smaller than 5MB.",
-    "delete_report": "Delete report"
+    "delete_report": "Delete report",
+    "error_empty_done_work": "Please enter completed work!",
+    "title_employee": "Daily Report",
+    "subtitle_employee": "Compose your daily work report.",
+    "notes": "Additional Notes",
+    "attach_file": "Attach File",
+    "send_to_manager": "Send to Manager"
   },
   "settings": {
     "title": "System Settings",
