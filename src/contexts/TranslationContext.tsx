@@ -42,8 +42,8 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     }
 
     if (typeof value !== "string") {
-      // Fallback to undefined if not found so that `||` fallbacks in the UI will work
-      return undefined as any
+      // Fallback to key if not found so that string methods like .replace() don't crash
+      return key as any
     }
 
     // Replace params (e.g. {hours})
