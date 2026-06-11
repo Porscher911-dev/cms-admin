@@ -128,7 +128,17 @@
     "project_updated": "Đã cập nhật thông tin dự án!",
     "project_deleted": "Đã xóa dự án thành công!",
     "progress_label": "Tiến độ dự án",
-    "error_empty_fields": "Vui lòng nhập tên dự án và khách hàng!"
+    "error_empty_fields": "Vui lòng nhập tên dự án và khách hàng!",
+    "edit_project_info": "Sửa thông tin",
+    "add_task": "Thêm Task",
+    "all_tasks": "Tất cả",
+    "status_todo": "Cần làm",
+    "status_done": "Hoàn thành",
+    "general_info": "Thông tin chung",
+    "overall_progress": "Tiến độ tổng thể",
+    "task_list": "Danh sách Công việc (Tasks)",
+    "search_tasks": "Tìm kiếm công việc hoặc người nhận...",
+    "no_tasks_found": "Không tìm thấy công việc nào phù hợp."
   },
   "clients": {
     "title": "Quản lý Khách Hàng",

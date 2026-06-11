@@ -128,7 +128,17 @@
     "project_updated": "Project information updated!",
     "project_deleted": "Project deleted successfully!",
     "progress_label": "Project Progress",
-    "error_empty_fields": "Please enter the project name and client!"
+    "error_empty_fields": "Please enter the project name and client!",
+    "edit_project_info": "Edit Info",
+    "add_task": "Add Task",
+    "all_tasks": "All",
+    "status_todo": "To Do",
+    "status_done": "Done",
+    "general_info": "General Info",
+    "overall_progress": "Overall Progress",
+    "task_list": "Task List",
+    "search_tasks": "Search tasks or assignee...",
+    "no_tasks_found": "No matching tasks found."
   },
   "clients": {
     "title": "Client Management",
