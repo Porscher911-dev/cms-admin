@@ -346,8 +346,8 @@ export default function SettingsPage() {
                   <input 
                     type="email" 
                     value={email} 
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" 
+                    disabled
+                    className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none transition-all opacity-70 cursor-not-allowed" 
                   />
                 </div>
                 <div className="space-y-2">
