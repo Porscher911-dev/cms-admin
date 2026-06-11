@@ -577,13 +577,30 @@ export default function TasksPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await fetch('/api/db?collection=tasks', { cache: 'no-store' })
+        const res = await fetch('/api/db?collection=projects', { cache: 'no-store' })
         if (res.ok) {
-          const data = await res.json()
-          if (data && (data.todo || data.inProgress || data.review || data.done)) {
-            setKanban(data)
+          const projectsData = await res.json()
+          if (projectsData && projectsData.length > 0) {
+            const newKanban: KanbanData = { todo: [], inProgress: [], review: [], done: [] }
+            projectsData.forEach((p: any) => {
+              if (p.tasks) {
+                p.tasks.forEach((t: any) => {
+                  const taskToKanban = {
+                    ...t,
+                    project: p.name,
+                    projectId: p.id,
+                    comments: t.comments || [],
+                    checklist: t.checklist || "0/0"
+                  }
+                  if (t.status === "DONE" || t.status === "done") newKanban.done.push(taskToKanban)
+                  else if (t.status === "IN_PROGRESS" || t.status === "inProgress") newKanban.inProgress.push(taskToKanban)
+                  else if (t.status === "REVIEW" || t.status === "review") newKanban.review.push(taskToKanban)
+                  else newKanban.todo.push(taskToKanban)
+                })
+              }
+            })
+            setKanban(newKanban)
           }
-          // If no data exists, keep the empty default kanban (no pre-populated tasks)
         }
       } catch (e) {}
     }
@@ -628,12 +645,26 @@ export default function TasksPage() {
         toast.info(`Đã chuyển "${movedTask.title}" sang ${colLabel}`)
       }
 
-      fetch('/api/db?collection=tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-        cache: 'no-store'
-      }).catch(() => {})
+      const newStatus = toColumn === "todo" ? "TODO" : toColumn === "inProgress" ? "IN_PROGRESS" : toColumn === "review" ? "REVIEW" : "DONE"
+      fetch('/api/db?collection=projects', { cache: 'no-store' })
+        .then(res => res.json())
+        .then(projectsData => {
+          const updatedProjects = projectsData.map((p: any) => {
+            if (p.id === movedTask.projectId) {
+               const pTasks = p.tasks.map((pt: any) => pt.id === movedTask.id ? { ...pt, status: newStatus } : pt)
+               const dCount = pTasks.filter((pt: any) => pt.status === "DONE" || pt.status === "done").length
+               const prog = pTasks.length > 0 ? Math.round((dCount / pTasks.length) * 100) : 0
+               return { ...p, tasks: pTasks, progress: prog }
+            }
+            return p
+          })
+          fetch('/api/db?collection=projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedProjects),
+            cache: 'no-store'
+          }).catch(() => {})
+        }).catch(() => {})
 
       return updated
     })
@@ -657,16 +688,29 @@ export default function TasksPage() {
             ...updated[col][idx],
             comments: [...updated[col][idx].comments, comment]
           }
+          
+          const changedTask = updated[col][idx]
+          fetch('/api/db?collection=projects', { cache: 'no-store' })
+            .then(res => res.json())
+            .then(projectsData => {
+              const updatedProjects = projectsData.map((p: any) => {
+                if (p.id === changedTask.projectId) {
+                   const pTasks = p.tasks.map((pt: any) => pt.id === changedTask.id ? { ...pt, comments: changedTask.comments } : pt)
+                   return { ...p, tasks: pTasks }
+                }
+                return p
+              })
+              fetch('/api/db?collection=projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedProjects),
+                cache: 'no-store'
+              }).catch(() => {})
+            }).catch(() => {})
+
           break
         }
       }
-      
-      fetch('/api/db?collection=tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-        cache: 'no-store'
-      }).catch(() => {})
 
       return updated
     })
@@ -686,18 +730,33 @@ export default function TasksPage() {
 
   /* ─── Compute project progress ─── */
   const allTasks = [...kanban.todo, ...kanban.inProgress, ...kanban.review, ...kanban.done]
-  const projectTasks = allTasks.filter(t => t.projectId === "P1")
-  const doneTasks = kanban.done.filter(t => t.projectId === "P1")
-  const projectProgress = projectTasks.length > 0 ? Math.round((doneTasks.length / projectTasks.length) * 100) : 0
-  const projectStatus = projectProgress === 100 ? t("tasks.status_completed") : projectProgress > 0 ? t("tasks.status_in_progress") : t("tasks.status_planning")
+  const currentUser = userProfile?.name || "Toby Vu"
+  const isEmployee = role === "EMPLOYEE"
+
+  // Only show projects where the user is involved (or all projects if manager/director)
+  const lowerUser = currentUser.toLowerCase()
+  const matchUser = (a: string) => {
+    const al = a?.toLowerCase() || ""
+    return al.includes(lowerUser) || lowerUser.includes(al)
+  }
+  const relevantTasks = isEmployee ? allTasks.filter(t => matchUser(t.assignee)) : allTasks
+  
+  const visibleProjectIds = Array.from(new Set(relevantTasks.map(t => t.projectId))).filter(Boolean)
+  
+  const projectsData = visibleProjectIds.map(pId => {
+    const pTasks = allTasks.filter(t => t.projectId === pId)
+    const dTasks = kanban.done.filter(t => t.projectId === pId)
+    const progress = pTasks.length > 0 ? Math.round((dTasks.length / pTasks.length) * 100) : 0
+    const status = progress === 100 ? t("tasks.status_completed") : progress > 0 ? t("tasks.status_in_progress") : t("tasks.status_planning")
+    const name = pTasks[0]?.project || "Unknown Project"
+    return { id: pId, name, total: pTasks.length, done: dTasks.length, progress, status }
+  })
 
   /* ─── Filter by search and role ─── */
-  const currentUser = userProfile?.name || "Toby Vu"
-
   const filterTasks = (tasks: Task[]) => {
     let filtered = tasks
     if ((role as string) === "EMPLOYEE" || ((role as string) !== "EMPLOYEE" && taskView === "my_tasks")) {
-      filtered = filtered.filter(t => t.assignee === currentUser)
+      filtered = filtered.filter(t => matchUser(t.assignee))
     }
     if (!search.trim()) return filtered
     const q = search.toLowerCase()
@@ -767,86 +826,90 @@ export default function TasksPage() {
       )}
 
       {/* Tiến độ dự án - REALTIME */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-        className="premium-card p-6 border-t-4 border-t-primary"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">{t("tasks.project_progress")}</h2>
-            <p className="text-sm text-muted-foreground">{t("tasks.progress_desc")}</p>
-          </div>
-          <button onClick={() => toast.info("Đang chuyển hướng tới trang Dự án...")} className="text-sm text-primary font-medium hover:underline">{t("common.view_all")}</button>
-        </div>
-
-        <div className="space-y-4">
-          <div className="p-5 border rounded-xl bg-muted/20 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-6 relative z-10">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-lg font-bold">Live Stream</h3>
-                  <motion.span
-                    key={projectStatus}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      projectProgress === 100 ? "bg-emerald-100 text-emerald-700" :
-                      projectProgress > 0 ? "bg-blue-100 text-blue-700" :
-                      "bg-slate-100 text-slate-700"
-                    }`}
-                  >
-                    {projectStatus}
-                  </motion.span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground font-medium">
-                  <span className="flex items-center gap-1"><UserCircle className="w-3.5 h-3.5" /> {t("tasks.manager")} Vũ Quang Huy</span>
-                  <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {t("tasks.client_unassigned")}</span>
-                  <span className="flex items-center gap-1"><ListTodo className="w-3.5 h-3.5" /> {t("tasks.task")} {doneTasks.length}/{projectTasks.length}</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <motion.div
-                  key={projectProgress}
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="text-2xl font-black text-primary mb-1"
-                >
-                  {projectProgress}%
-                </motion.div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground justify-end">
-                  {projectProgress === 100 && <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />}
-                  {projectProgress === 100 ? t("tasks.completed_excl") : t("tasks.progress")}
-                </div>
-              </div>
+      {projectsData.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="premium-card p-6 border-t-4 border-t-primary"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">{t("tasks.project_progress")}</h2>
+              <p className="text-sm text-muted-foreground">{t("tasks.progress_desc")}</p>
             </div>
+            <button onClick={() => toast.info("Đang chuyển hướng tới trang Dự án...")} className="text-sm text-primary font-medium hover:underline">{t("common.view_all")}</button>
+          </div>
 
-            {/* Animated Progress Bar */}
-            <div className="relative z-10 mx-2">
-              <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full ${projectProgress === 100 ? "bg-emerald-500" : "bg-primary"}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${projectProgress}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                />
-              </div>
-              <div className="flex justify-between mt-2">
-                {[t("tasks.status_planning"), t("tasks.executing"), t("tasks.reviewing"), t("tasks.status_completed")].map((stage, i) => {
-                  const stageProgress = (i / 3) * 100
-                  return (
-                    <div key={stage} className="flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full -mt-3.5 border-2 border-background shadow-sm transition-colors duration-500 ${
-                        projectProgress >= stageProgress ? "bg-primary" : "bg-muted"
-                      }`} />
-                      <span className="text-[10px] text-muted-foreground mt-1">{stage}</span>
+          <div className="space-y-4">
+            {projectsData.map(proj => (
+              <div key={proj.id} className="p-5 border rounded-xl bg-muted/20 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-6 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-bold">{proj.name}</h3>
+                      <motion.span
+                        key={proj.status}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          proj.progress === 100 ? "bg-emerald-100 text-emerald-700" :
+                          proj.progress > 0 ? "bg-blue-100 text-blue-700" :
+                          "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {proj.status}
+                      </motion.span>
                     </div>
-                  )
-                })}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground font-medium">
+                      <span className="flex items-center gap-1"><UserCircle className="w-3.5 h-3.5" /> {t("tasks.manager")}</span>
+                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {t("tasks.client_unassigned")}</span>
+                      <span className="flex items-center gap-1"><ListTodo className="w-3.5 h-3.5" /> {t("tasks.task")} {proj.done}/{proj.total}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <motion.div
+                      key={proj.progress}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="text-2xl font-black text-primary mb-1"
+                    >
+                      {proj.progress}%
+                    </motion.div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground justify-end">
+                      {proj.progress === 100 && <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />}
+                      {proj.progress === 100 ? t("tasks.completed_excl") : t("tasks.progress")}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Animated Progress Bar */}
+                <div className="relative z-10 mx-2">
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                    <motion.div
+                      className={`h-full rounded-full ${proj.progress === 100 ? "bg-emerald-500" : "bg-primary"}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${proj.progress}%` }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2">
+                    {[t("tasks.status_planning"), t("tasks.executing"), t("tasks.reviewing"), t("tasks.status_completed")].map((stage, i) => {
+                      const stageProgress = (i / 3) * 100
+                      return (
+                        <div key={stage} className="flex flex-col items-center">
+                          <div className={`w-3 h-3 rounded-full -mt-3.5 border-2 border-background shadow-sm transition-colors duration-500 ${
+                            proj.progress >= stageProgress ? "bg-primary" : "bg-muted"
+                          }`} />
+                          <span className="text-[10px] text-muted-foreground mt-1">{stage}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Kanban Board */}
       <div className="pt-2">

@@ -869,6 +869,25 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
     }
 
     updateProject(updatedProject)
+
+    fetch('/api/db?collection=notifications', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        const notifs = Array.isArray(data) ? data : []
+        const newNotif = {
+          id: Date.now(),
+          text: `Đã giao công việc mới: ${newTask.title} trong dự án ${project.name}`,
+          time: "Vừa xong",
+          read: false
+        }
+        fetch('/api/db?collection=notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([newNotif, ...notifs]),
+          cache: 'no-store'
+        }).catch(() => {})
+      }).catch(() => {})
+
     toast.success(t("projects.task_added") || "Đã thêm công việc thành công!")
     setIsAddTaskModalOpen(false)
   }
@@ -900,7 +919,26 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       team: selectedMembers
     }
     updateProject(updated)
-    toast.success(t("projects.team_updated") || "Đã cập nhật danh sách thành viên!")
+
+    fetch('/api/db?collection=notifications', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        const notifs = Array.isArray(data) ? data : []
+        const newNotif = {
+          id: Date.now(),
+          text: `Đã cập nhật nhân sự cho dự án ${project.name}: ${selectedMembers.join(", ")}`,
+          time: "Vừa xong",
+          read: false
+        }
+        fetch('/api/db?collection=notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([newNotif, ...notifs]),
+          cache: 'no-store'
+        }).catch(() => {})
+      }).catch(() => {})
+
+    toast.success(t("projects.project_updated") || "Đã cập nhật đội ngũ thành công!")
     setIsAddMemberModalOpen(false)
   }
 

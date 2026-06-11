@@ -355,7 +355,7 @@ export default function ProjectsPage() {
   const [typeFilter, setTypeFilter] = useState("ALL")
   const [projectToDeleteId, setProjectToDeleteId] = useState<string | null>(null)
   const [employees, setEmployees] = useState<any[]>([])
-  const { role } = useRole()
+  const { role, userProfile } = useRole()
 
   const statuses = [
     { id: "ALL", label: t("common.all") },
@@ -441,8 +441,19 @@ export default function ProjectsPage() {
   }
 
   const canManage = role === "MANAGER" || role === "DIRECTOR"
+  const currentUser = userProfile?.name || "Toby Vu"
 
   const filteredProjects = projects.filter(p => {
+    if (!canManage) {
+      const lowerUser = currentUser.toLowerCase()
+      const isInTeam = p.team?.some((m: string) => m.toLowerCase().includes(lowerUser) || lowerUser.includes(m.toLowerCase()))
+      const hasTask = p.tasks?.some((t: any) => {
+         const a = t.assignee?.toLowerCase() || ""
+         return a.includes(lowerUser) || lowerUser.includes(a)
+      })
+      if (!isInTeam && !hasTask) return false;
+    }
+
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.client.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "ALL" || p.status === statusFilter

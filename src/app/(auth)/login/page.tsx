@@ -35,6 +35,7 @@ export default function LoginPage() {
         
         // Set role for RoleProvider
         localStorage.setItem('mrex_demo_role', userRole)
+        localStorage.setItem('mrex_user_email', loginEmail)
 
         toast.success('Đăng nhập thành công!')
         
@@ -68,6 +69,7 @@ export default function LoginPage() {
           const userRole = foundEmployee.systemRole || 'EMPLOYEE'
           document.cookie = `mrex_auth=true; path=/; max-age=86400`
           localStorage.setItem('mrex_demo_role', userRole)
+          localStorage.setItem('mrex_user_email', loginEmail)
 
           toast.success('Đăng nhập thành công!')
           setTimeout(() => {
