@@ -70,7 +70,7 @@ export default function AttendancePage() {
     
     const loadAttendance = async () => {
       try {
-        const res = await fetch(`/api/db?collection=attendance_${role}`, { cache: 'no-store' })
+        const res = await fetch(`/api/db?collection=attendance_${encodeURIComponent(currentUser)}`, { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
           if (data) {
@@ -119,7 +119,11 @@ export default function AttendancePage() {
         if (res.ok) {
           const data = await res.json()
           if (data) {
-            setLeaveRequests(data)
+            if (role === "EMPLOYEE") {
+              setLeaveRequests(data.filter((r: any) => r.user === currentUser))
+            } else {
+              setLeaveRequests(data)
+            }
           } else {
             setLeaveRequests([])
           }
@@ -198,7 +202,7 @@ export default function AttendancePage() {
       lastCheckInMs: time ? String(Date.now()) : null
     }
     
-    fetch(`/api/db?collection=attendance_${role}`, {
+    fetch(`/api/db?collection=attendance_${encodeURIComponent(currentUser)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(attendanceData),
@@ -249,6 +253,12 @@ export default function AttendancePage() {
       return
     }
 
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (fromDate < todayStr) {
+      toast.error(t("attendance.error_past_date") || "Không thể chọn ngày trong quá khứ");
+      return;
+    }
+
     const formatDate = (dateStr: string) => {
       if (!dateStr) return ""
       const [year, month, day] = dateStr.split("-")
@@ -281,7 +291,8 @@ export default function AttendancePage() {
           id: Date.now() + Math.random(),
           text: t("attendance.notif_new_leave").replace("{user}", currentUser).replace("{type}", newRequest.type),
           time: t("common.just_now"),
-          read: false
+          read: false,
+          forRoles: ["DIRECTOR", "MANAGER"]
         }
         const updatedNotifs = [newNotif, ...(notifs || [])]
         fetch('/api/db?collection=notifications', {

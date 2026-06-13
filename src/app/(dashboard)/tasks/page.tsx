@@ -7,7 +7,7 @@ import {
   CheckSquare, ListTodo, Search, CheckCircle2, Clock,
   UserCircle, Users, X, MessageSquare, CalendarDays,
   FileText, GripVertical, ArrowRight, AlertCircle, Star,
-  Send
+  Send, Plus
 } from "lucide-react"
 import { useRole } from "@/components/providers/role-provider"
 import { useTranslation } from "@/contexts/TranslationContext"
@@ -422,6 +422,85 @@ function TaskModal({
   )
 }
 
+/* ─────────────── Create Task Modal ─────────────── */
+function CreateTaskModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (task: Partial<Task>) => void }) {
+  const { t } = useTranslation()
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [project, setProject] = useState("")
+  const [assignee, setAssignee] = useState("")
+  const [dueDate, setDueDate] = useState("")
+  const [priority, setPriority] = useState<"Cao"|"Bình thường"|"Thấp">("Bình thường")
+
+  if (!isOpen) return null
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim() || !dueDate) {
+      toast.error("Vui lòng nhập tên công việc và hạn chót!")
+      return
+    }
+    onSave({
+      id: `T${Date.now()}`,
+      title,
+      description,
+      project: project || "General",
+      projectId: `P${Date.now()}`,
+      priority,
+      dueDate,
+      createdAt: new Date().toLocaleString("vi-VN"),
+      assignee: assignee || "Chưa giao",
+      assigneeAvatar: assignee ? assignee.charAt(0).toUpperCase() : "U",
+      checklist: "0/0",
+      comments: []
+    })
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-card w-full max-w-md rounded-2xl shadow-2xl border overflow-hidden text-foreground">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-bold flex items-center gap-2"><Plus className="w-5 h-5 text-primary" /> {t("tasks.assign_task") || "Thêm Công Việc"}</h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors"><X className="w-5 h-5 text-muted-foreground" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t("tasks.task_title") || "Tiêu đề công việc"}</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t("tasks.task_desc") || "Mô tả"}</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("tasks.deadline") || "Hạn chót"}</label>
+              <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" required />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t("tasks.priority") || "Độ ưu tiên"}</label>
+              <select value={priority} onChange={e => setPriority(e.target.value as any)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <option value="Cao">Cao</option>
+                <option value="Bình thường">Bình thường</option>
+                <option value="Thấp">Thấp</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t("tasks.assignee") || "Người thực hiện"}</label>
+            <input type="text" value={assignee} onChange={e => setAssignee(e.target.value)} placeholder="Nhập tên nhân viên..." className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg font-medium hover:bg-muted transition-colors">{t("common.cancel")}</button>
+            <button type="submit" className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">{t("common.save")}</button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  )
+}
+
 /* ─────────────── Task Card (Draggable) ─────────────── */
 function TaskCard({
   task,
@@ -573,6 +652,7 @@ export default function TasksPage() {
   const [taskView, setTaskView] = useState<"my_tasks" | "team_tasks">(role === "EMPLOYEE" ? "my_tasks" : "team_tasks")
   const [kanban, setKanban] = useState<KanbanData>({ todo: [], inProgress: [], review: [], done: [] })
   const [selectedTask, setSelectedTask] = useState<{ task: Task; column: ColumnId } | null>(null)
+  const [isCreatingTask, setIsCreatingTask] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -790,8 +870,8 @@ export default function TasksPage() {
           </div>
           {role !== "EMPLOYEE" && (
             <>
-              <button onClick={() => toast.success("Đã mở form giao việc mới!")} className="bg-card border px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors">+ Giao việc</button>
-              <button onClick={() => toast.success("Đã mở tạo Campaign!")} className="bg-card border px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors">+ Campaign</button>
+              <button onClick={() => setIsCreatingTask(true)} className="bg-card border px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors">+ Giao việc</button>
+              <button onClick={() => setIsCreatingTask(true)} className="bg-card border px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors">+ Campaign</button>
             </>
           )}
         </motion.div>
@@ -942,6 +1022,18 @@ export default function TasksPage() {
           />
         )}
       </AnimatePresence>
+
+      <CreateTaskModal 
+        isOpen={isCreatingTask} 
+        onClose={() => setIsCreatingTask(false)} 
+        onSave={(newTask) => {
+          setKanban(prev => ({
+            ...prev,
+            todo: [newTask as Task, ...prev.todo]
+          }))
+          toast.success("Đã tạo công việc mới!")
+        }} 
+      />
     </div>
   )
 }

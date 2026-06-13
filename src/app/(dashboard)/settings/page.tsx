@@ -148,7 +148,7 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async () => {
     try {
-      await fetch(`/api/db?collection=user_profile_${role}`, {
+      await fetch(`/api/db?collection=user_profile_${encodeURIComponent(name || userProfile?.name || role)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, email, jobTitle, avatar }),
@@ -164,7 +164,7 @@ export default function SettingsPage() {
 
   const handleSaveSecurity = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!oldPassword || !newPassword || !confirmPassword) {
+    if (!newPassword || !confirmPassword) {
       toast.error(t("settings.password_empty_error"))
       return
     }
@@ -177,8 +177,9 @@ export default function SettingsPage() {
       return
     }
     try {
+      const profileKey = userProfile?.name || role;
       // Verify old password against stored one
-      const res = await fetch(`/api/db?collection=user_password_${role}`, { cache: 'no-store' })
+      const res = await fetch(`/api/db?collection=user_password_${encodeURIComponent(profileKey)}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         if (data && data.password && data.password !== oldPassword) {
@@ -187,7 +188,7 @@ export default function SettingsPage() {
         }
       }
       // Save new password
-      await fetch(`/api/db?collection=user_password_${role}`, {
+      await fetch(`/api/db?collection=user_password_${encodeURIComponent(profileKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPassword }),
@@ -365,7 +366,8 @@ export default function SettingsPage() {
                     type="text" 
                     value={jobTitle} 
                     onChange={(e) => setJobTitle(e.target.value)}
-                    className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" 
+                    disabled={true}
+                    className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none transition-all opacity-70 cursor-not-allowed" 
                   />
                 </div>
               </div>

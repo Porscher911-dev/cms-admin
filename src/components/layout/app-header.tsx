@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { motion } from "framer-motion"
 import { Bell, Search, Menu, Globe, X, LogOut, User, Sun, Moon } from "lucide-react"
 import { useTranslation } from "@/contexts/TranslationContext"
 import { useRole, Role } from "@/components/providers/role-provider"
@@ -152,6 +153,17 @@ export function AppHeader() {
           />
         </div>
       </div>
+
+      {/* Motivational Marquee */}
+      <div className="flex-1 hidden lg:block overflow-hidden mx-8 relative h-full flex items-center">
+        <motion.div
+          animate={{ x: ["100%", "-100%"] }}
+          transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
+          className="whitespace-nowrap text-sm font-semibold text-primary/70 mt-5"
+        >
+          ✨ "Làm việc cùng nhau, chúng ta có thể làm được những điều phi thường." - Chúc mọi người một ngày làm việc hiệu quả! 🚀
+        </motion.div>
+      </div>
       
       <div className="flex items-center gap-4">
 
@@ -224,9 +236,6 @@ export function AppHeader() {
                     <p className="text-[11px] text-muted-foreground mt-1">{n.time}</p>
                   </div>
                 ))}
-              </div>
-              <div className="px-4 py-2.5 border-t text-center">
-                <button onClick={() => { window.location.href = '/notifications'; setShowNotifications(false); }} className="text-xs text-primary font-semibold hover:underline">{t("header.view_all_notifications")}</button>
               </div>
             </div>
           )}

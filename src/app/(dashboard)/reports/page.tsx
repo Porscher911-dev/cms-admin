@@ -13,7 +13,9 @@ const initialReports: any[] = []
 export default function ReportsPage() {
   const { t } = useTranslation()
   const { role, userProfile } = useRole()
+  const currentUser = userProfile?.name || "Toby Vu"
   const [reportText, setReportText] = useState("")
+  const [expandedReports, setExpandedReports] = useState<string[]>([])
   // Structured form states
   const [doneWork, setDoneWork] = useState("")
   const [issues, setIssues] = useState("")
@@ -130,12 +132,28 @@ export default function ReportsPage() {
       toast.success(t("reports.reply_sent") + " " + sender + "!")
       setActiveReplyId(null)
       setReplyText("")
+
+      // Notify employee
+      fetch('/api/db?collection=notifications', { cache: 'no-store' }).then(res => res.json()).then(notifs => {
+         const newNotif = {
+           id: Date.now() + Math.random(),
+           text: "Quản lý đã phản hồi báo cáo của bạn.",
+           time: t("common.just_now") || "Vừa xong",
+           read: false,
+           forRoles: ["EMPLOYEE"] // could restrict to specific user if notifs had `forUser`
+         }
+         fetch('/api/db?collection=notifications', { 
+           method: 'POST', 
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify([newNotif, ...(notifs||[])])
+         })
+      }).catch(()=>{})
     } else {
       toast.error(t("reports.error_empty_reply"))
     }
   }
 
-  const myReports = reports.filter(r => r.sender === "Toby Vu")
+  const myReports = reports.filter(r => r.sender === currentUser)
 
   // EMPLOYEE VIEW
   if (role === "EMPLOYEE") {
@@ -273,7 +291,19 @@ export default function ReportsPage() {
                           <CheckCircle2 className="w-3 h-3" /> {report.status}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{report.content}</p>
+                      <div className="relative">
+                        <p className={`text-xs text-muted-foreground whitespace-pre-wrap ${expandedReports.includes(report.id) ? "" : "line-clamp-2"}`}>
+                          {report.content}
+                        </p>
+                        {report.content && report.content.length > 100 && (
+                          <button 
+                            onClick={() => setExpandedReports(prev => prev.includes(report.id) ? prev.filter(id => id !== report.id) : [...prev, report.id])}
+                            className="text-[10px] text-primary hover:underline mt-1 font-semibold"
+                          >
+                            {expandedReports.includes(report.id) ? "Thu gọn" : "Xem thêm"}
+                          </button>
+                        )}
+                      </div>
                       {report.attachments && report.attachments.length > 0 && (
                         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
                           {report.attachments.map((att: any, idx: number) => (

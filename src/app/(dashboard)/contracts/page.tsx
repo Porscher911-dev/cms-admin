@@ -32,7 +32,7 @@ function ContractModal({ isOpen, onClose, onSave, activeTab }: { isOpen: boolean
       name: name.trim(),
       type,
       date: formatDate(date),
-      status: "ACTIVE",
+      status: "PENDING", // Wait, I should set it dynamically, but this is inside Modal which doesn't have role. I'll pass role or just set it later. I will just pass it out as is, and override in `handleAddContract`.
       category: activeTab,
       fileUrl: fileUrl.trim()
     })
@@ -148,6 +148,7 @@ export default function ContractsPage() {
   }
 
   const handleAddContract = (c: any) => {
+    c.status = role === "DIRECTOR" ? "ACTIVE" : "PENDING"
     const updated = [c, ...contracts]
     setContracts(updated)
     persistContracts(updated)
@@ -159,11 +160,9 @@ export default function ContractsPage() {
       fetch('/api/db?collection=notifications').then(r => r.json()).then(notifs => {
         const newNotif = {
           id: String(Date.now()),
-          title: "Hợp đồng mới",
-          message: `Một hợp đồng mới (${c.name}) vừa được thêm.`,
+          text: `Một hợp đồng mới (${c.name}) vừa được thêm.`,
           time: "Vừa xong",
           read: false,
-          type: "info"
         }
         const updatedNotifs = [newNotif, ...(Array.isArray(notifs) ? notifs : [])]
         fetch('/api/db?collection=notifications', {
@@ -181,6 +180,13 @@ export default function ContractsPage() {
     persistContracts(updated)
     toast.success(t("common.delete") + " " + id)
     setDeleteId(null)
+  }
+
+  const handleUpdateStatus = (id: string, newStatus: string) => {
+    const updated = contracts.map(c => c.id === id ? { ...c, status: newStatus } : c)
+    setContracts(updated)
+    persistContracts(updated)
+    toast.success(`Đã cập nhật trạng thái hợp đồng: ${newStatus}`)
   }
 
   const filteredContracts = contracts.filter(c => 
@@ -250,42 +256,65 @@ export default function ContractsPage() {
                 <th className="px-6 py-4 font-semibold text-right">{t("common.actions")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
-              {filteredContracts.map((c) => (
-                <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-6 py-4 font-medium">{c.id}</td>
-                  <td className="px-6 py-4 font-semibold text-foreground">{c.name}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{c.type}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{c.date}</td>
-                  <td className="px-6 py-4 text-muted-foreground">
-                    {c.fileUrl ? (
-                      <a href={c.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                        <FileText className="w-4 h-4" /> Link
-                      </a>
-                    ) : "-"}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      c.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 
-                      c.status === 'PENDING' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                      'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                    }`}>
-                      {c.status === 'ACTIVE' ? t("contracts.status_active") : c.status === 'PENDING' ? t("contracts.status_pending") : t("contracts.status_expired")}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => setDeleteId(c.id)}
-                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors" title={t("common.delete")}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredContracts.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">{t("contracts.no_contracts")}</td></tr>
-              )}
+            <tbody>
+              <AnimatePresence>
+                {filteredContracts.map((contract) => (
+                  <motion.tr 
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                    key={contract.id} 
+                    className="border-b last:border-0 hover:bg-muted/50 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-bold">{contract.id}</td>
+                    <td className="px-6 py-4 font-semibold">{contract.name}</td>
+                    <td className="px-6 py-4"><span className="px-2.5 py-1 rounded-full text-xs font-bold bg-muted text-muted-foreground">{contract.type}</span></td>
+                    <td className="px-6 py-4 font-medium">{contract.date}</td>
+                    <td className="px-6 py-4">
+                      {contract.fileUrl ? (
+                        <a href={contract.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1 font-medium">
+                          <FileText className="w-4 h-4" /> Xem file
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground text-xs italic">Không có</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                        contract.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
+                        contract.status === 'PENDING' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400' :
+                        'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'
+                      }`}>
+                        {contract.status === 'ACTIVE' ? (t("contracts.status_active") || 'Có hiệu lực') : 
+                         contract.status === 'PENDING' ? (t("contracts.status_pending") || 'Chờ duyệt') : 
+                         (t("contracts.status_expired") || 'Hết hạn')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {role === "DIRECTOR" && contract.status === "PENDING" && (
+                          <div className="flex items-center gap-1">
+                            <button onClick={() => handleUpdateStatus(contract.id, "ACTIVE")} className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors" title="Duyệt">
+                              Duyệt
+                            </button>
+                            <button onClick={() => handleUpdateStatus(contract.id, "REJECTED")} className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 transition-colors" title="Từ chối">
+                              Từ chối
+                            </button>
+                          </div>
+                        )}
+                        <button onClick={() => setDeleteId(contract.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
             </tbody>
           </table>
+          {filteredContracts.length === 0 && (
+            <div className="text-center py-10 text-muted-foreground">
+              {t("contracts.no_contracts")}
+            </div>
+          )}
         </div>
       </motion.div>
 

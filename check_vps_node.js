@@ -4,13 +4,14 @@ const conn = new Client();
 conn.on('error', (err) => {
   console.error('SSH Connection Error:', err.message);
 }).on('ready', () => {
-  console.log('Connecting to VPS to check resources...');
+  console.log('Connecting to VPS to check Node.js & PM2...');
   const checkCmd = `
-    echo "=== MEMORY ==="
-    free -m
-    echo ""
-    echo "=== CPU & PROCESSES ==="
-    top -b -n 1 | head -n 20
+    echo "=== NODE ==="
+    node -v
+    echo "=== NPM ==="
+    npm -v
+    echo "=== PM2 ==="
+    pm2 -v
   `;
   conn.exec(checkCmd, (err, stream) => {
     if (err) throw err;

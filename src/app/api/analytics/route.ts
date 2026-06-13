@@ -7,12 +7,10 @@ export async function GET() {
   try {
     // We will read the JSON stores to generate analytics
     const projectStore = await prisma.store.findUnique({ where: { key: 'projects' } });
-    const expenseStore = await prisma.store.findUnique({ where: { key: 'expenses' } });
-    const contractsStore = await prisma.store.findUnique({ where: { key: 'contracts' } });
+    const financeStore = await prisma.store.findUnique({ where: { key: 'finance' } });
 
     const projects = projectStore ? JSON.parse(projectStore.value) : [];
-    const expenses = expenseStore ? JSON.parse(expenseStore.value) : [];
-    const contracts = contractsStore ? JSON.parse(contractsStore.value) : [];
+    const finance = financeStore ? JSON.parse(financeStore.value) : [];
 
     // Calculate Project Status Distribution
     const projectStatusMap: Record<string, number> = {};
@@ -26,20 +24,14 @@ export async function GET() {
     }));
 
     // Calculate Monthly Financials (Revenue vs Expenses)
-    // Revenue from active contracts
     let totalRevenue = 0;
-    contracts.forEach((c: any) => {
-      if (c.status === 'ACTIVE' && c.category === 'company') {
-         // Contract value might not be stored as number, let's assume standard value or random
-         totalRevenue += 50000000; 
-      }
-    });
-
     let totalExpenses = 0;
-    expenses.forEach((e: any) => {
-      if (e.status === 'APPROVED') {
-        // e.amount is likely string like "15.000.000", clean it
-        const val = parseInt(e.amount.replace(/\D/g, '')) || 0;
+    
+    finance.forEach((t: any) => {
+      const val = typeof t.amount === 'number' ? t.amount : (parseInt(t.amount?.toString().replace(/\D/g, '')) || 0);
+      if (t.type === 'THU') {
+        totalRevenue += val;
+      } else if (t.type === 'CHI') {
         totalExpenses += val;
       }
     });
@@ -58,6 +50,7 @@ export async function GET() {
       financialTrend.push({
         name: months[mIndex],
         revenue: i === 0 ? totalRevenue : Math.floor(totalRevenue * noise),
+        profit: i === 0 ? (totalRevenue - totalExpenses) : Math.floor((totalRevenue - totalExpenses) * noise), // Dashboard chart needs 'profit' key
         expenses: i === 0 ? totalExpenses : Math.floor(totalExpenses * noise),
       });
     }

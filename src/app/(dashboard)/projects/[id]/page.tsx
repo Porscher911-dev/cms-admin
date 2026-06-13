@@ -383,6 +383,7 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
   const [dueDate, setDueDate] = useState("")
   const [assignee, setAssignee] = useState("")
   const [newComment, setNewComment] = useState("")
+  const { userProfile } = useRole()
 
   useEffect(() => {
     if (task) {
@@ -422,9 +423,9 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
 
   const handleAddComment = () => {
     if (!newComment.trim()) return
-    const authorName = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
-    const roleLabel = role === "DIRECTOR" ? t("company.board_of_directors") : role === "MANAGER" ? t("roles.manager") : t("roles.employee")
-    const avatarLabel = role === "DIRECTOR" ? "NĐ" : role === "MANAGER" ? "VH" : "TV"
+    const authorName = userProfile?.name || "Toby Vu"
+    const roleLabel = userProfile?.jobTitle || (role === "DIRECTOR" ? t("company.board_of_directors") : role === "MANAGER" ? t("roles.manager") : t("roles.employee"))
+    const avatarLabel = authorName.charAt(0).toUpperCase()
 
     const comment = {
       id: `C-${crypto.randomUUID()}`,
@@ -620,7 +621,7 @@ function TaskDetailsModal({ isOpen, task, onClose, onSave, onDelete, teamMembers
 
               <div className="space-y-1.5">
                 <span className="text-muted-foreground block">{t("projects.status")}</span>
-                {canManage || task.assignee === (role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu") ? (
+                {canManage || task.assignee === (userProfile?.name || "Toby Vu") ? (
                   <select
                     value={task.status}
                     onChange={(e) => handleStatusChange(e.target.value)}

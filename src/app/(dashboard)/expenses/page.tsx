@@ -83,13 +83,13 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }: { isOpen:
 
 export default function ExpensesPage() {
   const { t } = useTranslation()
-  const { role } = useRole()
+  const { role, userProfile } = useRole()
   const [requests, setRequests] = useState<any[]>([])
   const [showModal, setShowModal] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const canApprove = role === "DIRECTOR" || role === "MANAGER"
-  const currentUser = role === "DIRECTOR" ? "Nguyễn Minh Đức" : role === "MANAGER" ? "Vũ Quang Huy" : "Toby Vu"
+  const currentUser = userProfile?.name || "Toby Vu"
 
   useEffect(() => {
     const loadData = async () => {

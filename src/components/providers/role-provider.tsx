@@ -61,40 +61,37 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         // Fetch profile
         let finalProfile: UserProfile | null = null
 
-        if (role === "EMPLOYEE") {
-          const loginEmail = localStorage.getItem('mrex_user_email')
-          if (loginEmail) {
-            try {
-              const empRes = await fetch('/api/employees', { cache: 'no-store' })
-              if (empRes.ok) {
-                const emps = await empRes.json()
-                const me = emps.find((e: any) => e.email?.toLowerCase() === loginEmail.toLowerCase())
-                if (me) {
-                  finalProfile = {
-                    name: me.name,
-                    jobTitle: me.role || 'Nhân viên',
-                    email: me.email,
-                    phone: me.phone || '',
-                    avatar: ''
-                  }
+        const loginEmail = localStorage.getItem('mrex_user_email')
+        if (loginEmail) {
+          try {
+            const empRes = await fetch('/api/employees', { cache: 'no-store' })
+            if (empRes.ok) {
+              const emps = await empRes.json()
+              const me = emps.find((e: any) => e.email?.toLowerCase() === loginEmail.toLowerCase())
+              if (me) {
+                finalProfile = {
+                  name: me.name,
+                  jobTitle: me.role || defaultProfiles[role].jobTitle,
+                  email: me.email,
+                  phone: me.phone || '',
+                  avatar: ''
                 }
               }
-            } catch (e) {}
-          }
+            }
+          } catch (e) {}
         }
 
-        if (!finalProfile) {
-          const profileRes = await fetch(`/api/db?collection=user_profile_${role}`, { cache: 'no-store' })
-          if (profileRes.ok) {
-            const data = await profileRes.json()
-            if (data) {
-              finalProfile = {
-                name: data.name || defaultProfiles[role].name,
-                phone: data.phone || defaultProfiles[role].phone,
-                email: data.email || defaultProfiles[role].email,
-                jobTitle: data.jobTitle || defaultProfiles[role].jobTitle,
-                avatar: data.avatar || defaultProfiles[role].avatar
-              }
+        const profileKey = finalProfile?.name || defaultProfiles[role].name;
+        const profileRes = await fetch(`/api/db?collection=user_profile_${encodeURIComponent(profileKey)}`, { cache: 'no-store' })
+        if (profileRes.ok) {
+          const data = await profileRes.json()
+          if (data && data.name) {
+            finalProfile = {
+              name: data.name,
+              phone: data.phone || finalProfile?.phone || defaultProfiles[role].phone,
+              email: data.email || finalProfile?.email || defaultProfiles[role].email,
+              jobTitle: data.jobTitle || finalProfile?.jobTitle || defaultProfiles[role].jobTitle,
+              avatar: data.avatar || defaultProfiles[role].avatar
             }
           }
         }
@@ -102,7 +99,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(finalProfile || defaultProfiles[role])
 
         // Fetch attendance
-        const attendanceRes = await fetch(`/api/db?collection=attendance_${role}`, { cache: 'no-store' })
+        const attendanceRes = await fetch(`/api/db?collection=attendance_${encodeURIComponent(profileKey)}`, { cache: 'no-store' })
         if (attendanceRes.ok) {
           const data = await attendanceRes.json()
           if (data && typeof data.isCheckedIn === "boolean") {
@@ -132,7 +129,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   // Custom setAttendance
   const updateAttendanceState = (newState: AttendanceState) => {
     setAttendanceState(newState)
-    fetch(`/api/db?collection=attendance_${role}`, {
+    const profileKey = userProfile?.name || defaultProfiles[role].name;
+    fetch(`/api/db?collection=attendance_${encodeURIComponent(profileKey)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newState)

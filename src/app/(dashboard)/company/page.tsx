@@ -69,6 +69,32 @@ export default function CompanyPortalPage() {
       } catch (e) {}
 
       try {
+        const resEmp = await fetch('/api/employees', { cache: 'no-store' })
+        if (resEmp.ok) {
+          const emps = await resEmp.json()
+          if (emps && emps.length > 0) {
+            const deptMap: Record<string, string[]> = {}
+            emps.forEach((e: any) => {
+              if (e.systemRole === 'DIRECTOR') return // Skip director for departments
+              const d = e.department || 'Phòng ban khác'
+              if (!deptMap[d]) deptMap[d] = []
+              deptMap[d].push(e.name)
+            })
+            const newDepts = Object.keys(deptMap).map((d, i) => ({
+              id: String(i + 1),
+              name: d,
+              desc: "Nhân sự chuyên môn",
+              employees: deptMap[d].join(', ')
+            }))
+            if (newDepts.length > 0) {
+              setDepartments(newDepts)
+              return // Successfully built from employees
+            }
+          }
+        }
+      } catch (e) {}
+
+      try {
         const resDept = await fetch('/api/db?collection=departments', { cache: 'no-store' })
         if (resDept.ok) {
           const data = await resDept.json()

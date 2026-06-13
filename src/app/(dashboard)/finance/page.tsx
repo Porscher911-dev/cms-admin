@@ -37,8 +37,9 @@ function TransactionModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClos
   const [source, setSource] = useState("COMPANY_ACC")
   const [category, setCategory] = useState("MREX")
   const [amount, setAmount] = useState("")
-  const [date, setDate] = useState("")
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [note, setNote] = useState("")
+  const [fileUrl, setFileUrl] = useState("")
 
   if (!isOpen) return null
 
@@ -60,7 +61,8 @@ function TransactionModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClos
       category,
       amount: parseFloat(amount.replace(/,/g, '')) || 0,
       date: formattedDate || new Date().toLocaleDateString("vi-VN"),
-      note: note.trim()
+      note: note.trim(),
+      fileUrl: fileUrl.trim()
     })
     toast.success("Đã ghi nhận giao dịch mới!")
     onClose()
@@ -112,8 +114,12 @@ function TransactionModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClos
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("finance.date")}</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <input type="date" value={date} disabled className="w-full bg-muted/30 border rounded-lg px-4 py-2 opacity-70 cursor-not-allowed" />
             </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Link đính kèm (Hóa đơn/Chứng từ)</label>
+            <input type="url" value={fileUrl} onChange={e => setFileUrl(e.target.value)} placeholder="https://..." className="w-full bg-muted/50 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Ghi chú (Note)</label>
@@ -197,6 +203,14 @@ function TransactionDetailModal({ txn, onClose }: { txn: any; onClose: () => voi
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">Ghi chú</div>
               <div className="text-sm bg-muted/30 p-3 rounded-lg italic">"{txn.note}"</div>
+            </div>
+          )}
+          {txn.fileUrl && (
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">Chứng từ đính kèm</div>
+              <a href={txn.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline font-medium flex items-center gap-1">
+                <FileText className="w-4 h-4" /> Xem chứng từ
+              </a>
             </div>
           )}
         </div>
